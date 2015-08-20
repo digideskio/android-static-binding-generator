@@ -1,7 +1,7 @@
 {
   "name": "ast_parser",
   "version": "1.0.0",
-  "description": "Parses javascript code and extracts extend class names and interfaces",
+  "description": "Parses javascript code and extracts extend class and interfaces names",
   "main": "traverse_files.js",
   "private": true,
   "author": "",

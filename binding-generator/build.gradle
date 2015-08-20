@@ -6,10 +6,6 @@
 
 apply plugin: "java"
 
-sourceSets {
-	main.java.srcDir "$rootDir/src"
-}
-
 jar {
     manifest {
         attributes("Manifest-Version": "1.0",
