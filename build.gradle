@@ -1,8 +1,8 @@
 /*
 *	The android static binding generator will generate bindings for some javascript code you specify.
-*	
+*	The passed output directory will be created if necessary
 *	to run: 
-*			
+*			gradle generatebindings -PjsCodeDir=[js_code_dir] -PjarsDir=[jars_dir] -PoutDir=[out_dir]
 */
 def distDir = "$rootDir/dist"
 def interfaceNameGeneratorDir = "$rootDir/interface-name-generator"
