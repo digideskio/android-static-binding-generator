@@ -2,16 +2,16 @@ module.exports = function(grunt) {
 	
 	var config = {
 		rootDir: ".",
-		interfaceGenPath: '_interface_name_generator/interface_name_grator.jar',
-		jarsDir: grunt.option('jarsDir') || './../JARS',
+		interfaceGenPath: 'interface-name-generator/interface_name_grator.jar',
+		jarsDir: grunt.option('jarsDir') || './../jars',
 		interfaceNamesFile: 'interface-names.txt',
-		outputFilePath: '_interface_name_generator/out/',
-		astParserDir: '_ast_parser',
+		outputFilePath: 'interface-name-generator/out/',
+		astParserDir: 'ast-parser',
 		bindingsFileName: 'bindings.txt',
-		outDir: 'DIST',
-		relativeOutDir: grunt.option('outDir') || './../DIST',
+		outDir: 'dist',
+		relativeOutDir: grunt.option('outDir') || './../../../dist',
 		userCode: 'JSCODE',
-		relativeUserCode: grunt.option('inputDir') || './../JSCODE'
+		relativeUserCode: grunt.option('inputDir') || './../jscode'
 	}
 	
 	grunt.initConfig({
@@ -22,15 +22,15 @@ module.exports = function(grunt) {
 			},
 			npmInstallInParseProject: {
 				cmd: 'npm install',
-				cwd: './_ast_parser'
+				cwd: './ast-parser'
 			},
 			extractExtendNames: {
 				cmd: 'node traverse_files.js ' +  './../' + config.outputFilePath + config.interfaceNamesFile + ' ' + config.relativeUserCode + ' ./' + config.bindingsFileName,
-				cwd: './_ast_parser'
+				cwd: './ast-parser'
 			},
 			runBindingGenerator: {
-				cmd: 'java -jar extend_classes_grator.jar ' + config.jarsDir + ' ' + './../' + config.astParserDir + '/' + config.bindingsFileName + ' ' + config.relativeOutDir,
-				cwd: './_binding_generator'
+				cmd: 'java -jar static_bindings_generator.jar ' + config.jarsDir + ' ' + './../../../' + config.astParserDir + '/' + config.bindingsFileName + ' ' + config.relativeOutDir,
+				cwd: './binding-generator/build/libs'
 			}
 		},
 		clean: {
