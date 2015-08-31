@@ -47,10 +47,11 @@ task buildInterfaceGenerator (type: Exec) {
 	workingDir interfaceNameGeneratorDir
 	
 	if(isWinOs) {
-		commandLine "cmd", "/c"
+		commandLine "cmd", "/c", "gradle", "jar"
 	}
-	
-	args "gradle", "jar"
+	else {
+		commandLine "gradle", "jar"
+	}
 }
 
 task generateInterfaceNamesList(type: JavaExec) {
@@ -70,30 +71,33 @@ task runNpmInstallForAstParser (type: Exec) {
 	workingDir astParserDir
 	
 	if(isWinOs) {
-		commandLine "cmd", "/c"
+		commandLine "cmd", "/c", "npm", "install"
 	}
-	
-	args "npm", "install"
+	else {
+		commandLine "npm", "install"
+	}
 }
 
 task runAstParser (type: Exec) {
 	workingDir astParserDir
 	
 	if(isWinOs) {
-		commandLine "cmd", "/c"
+		commandLine "cmd", "/c", "node", "traverse_files.js", "${interfaceNameGeneratorLibsDir}/interfaces-names.txt", jsCodeDir
 	}
-	
-	args "node", "traverse_files.js", "${interfaceNameGeneratorLibsDir}/interfaces-names.txt", jsCodeDir
+	else {
+		commandLine "node", "traverse_files.js", "${interfaceNameGeneratorLibsDir}/interfaces-names.txt", jsCodeDir
+	}
 }
 
 task buildBindingGenerator (type: Exec) {
 	workingDir bindingGeneratorDir
 	
 	if(isWinOs) {
-		commandLine "cmd", "/c"
+		commandLine "cmd", "/c", "gradle", "jar"
 	}
-	
-	args "gradle", "jar"
+	else {
+		commandLine "gradle", "jar"
+	}
 }
 
 task generateBindings(type: JavaExec) {
