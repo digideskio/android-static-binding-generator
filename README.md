@@ -1,4 +1,4 @@
-# ast_parser
+# android-static-binding-generator
 This is a tool for javascript static analysis. 
 * Input: valid javascript code.
 * Output: should be generated file with necessary information that is [NativeScript](https://www.nativescript.org/) specific.
