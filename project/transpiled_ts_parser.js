@@ -51,7 +51,9 @@ if(arguments && arguments.length >= 4) {
 	console.log("outFile: " + outFile)
 }
 
-var interfaceNames = ["android.app.Application.ActivityLifecycleCallbacks"];
+var interfaceNames = ["android.app.Application.ActivityLifecycleCallbacks",
+					"android.view.View.OnClickListener",
+					"android.view.View.OnClickListener111"];
 
 /////////////// init ////////////////
 function cleanOutFile(filePath) {
@@ -137,7 +139,9 @@ var astFromFileContent = function (data, err) {
 		}
 		
 		logger.info("+parsing ast from file!");
+		// console.log("data: " + data.data);
 		var ast = babelParser.parse(data.data, {
+						minify: false,
 						plugins: ["decorators"]
 					});
 		data.ast = ast;
@@ -160,7 +164,7 @@ var visitAst = function (data, err) {
 				var decoratorConfig = {
 					logger: logger,
 					extendDecoratorName: extendDecoratorName,
-					filePath: data.filePath,
+					filePath: data.filePath.substring(inputDir.length, (data.filePath.length - 3)),
 					interfaceNames: interfaceNames
 				};
 				es5_visitors.es5Visitor(path, decoratorConfig);
@@ -172,6 +176,7 @@ var visitAst = function (data, err) {
 		var normalExtendsArr = es5_visitors.es5Visitor.getCommonExtendInfo().join("\n")
 		var interfacesArr = es5_visitors.es5Visitor.getInterfaceInfo().join("\n")
 
+		console.log("\n\nrunning in file " + data.filePath);
 		console.log("-------")
 		console.log("customExtendsArr:")
 		console.log(customExtendsArr)

@@ -3,6 +3,12 @@ var es5_visitors = (function () {
 	var t = require("babel-types"),
 
 		defaultExtendDecoratorName = "JavaProxy",
+		columnOffset = 1,
+		TYPESCRIPT_EXTEND_STRING = "_frnal_prepareExtend_l62_c37__";
+		FILE_SEPARATOR = "_f",
+		LINE_SEPARATOR = "_l",
+		COLUMN_SEPARATOR = "_c",
+		DECLARED_CLASS_SEPARATOR = "__",
 		customExtendsArr = [],
 		normalExtendsArr = [],
 		interfacesArr = [];
@@ -16,6 +22,7 @@ var es5_visitors = (function () {
 	*		config - filename, decorator name ...
 	*/
 	function es5Visitor(path, config) {
+
 		if(!config.filePath) {
 			config.filePath = "No file path provided";
 		}
@@ -57,21 +64,27 @@ var es5_visitors = (function () {
 	*	Returns the custom extends array generated from visitor
 	*/
 	es5Visitor.getProxyExtendInfo = function () {
-		return customExtendsArr;
+		var res = customExtendsArr.slice();
+		customExtendsArr = [];
+		return res;
 	}
 
 	/*
 	*	Returns the common extends array generated from visitor
 	*/
 	es5Visitor.getCommonExtendInfo = function () {
-		return normalExtendsArr;
+		var res = normalExtendsArr.slice();
+		normalExtendsArr = [];
+		return res;
 	}
 
 	/*
 	*	Returns the extended interfaces array generated from visitor
 	*/
 	es5Visitor.getInterfaceInfo = function() {
-		return interfacesArr;
+		var res = interfacesArr.slice();
+		interfacesArr = [];
+		return res;
 	}
 
 	/* 
@@ -83,13 +96,19 @@ var es5_visitors = (function () {
 		//this is the information for a normal extend
 		var extendClass = _getArgumentFromNodeAsString(path, 5, config)
 		var overriddenMethodNames = _getOverriddenMethodsTypescript(path, 3)
+		var extendParent = _getParrent(path, 1, config);
+		var declaredClassName = "";
+		if(t.isCallExpression(extendParent)) {
+			declaredClassName = extendParent.node.arguments[0].name;
+		}
 
 		// todo: check the found names in some list with predefined classes
 
 		// check for _decorate (normal typescript extend + java proxy)
+
 		var isDecorated = traverseToFindDecorate(path, config, extendClass, overriddenMethodNames);
 		if(!isDecorated) {
-			var lineToWrite = _generateLineToWrite("", extendClass, overriddenMethodNames);
+			var lineToWrite = _generateLineToWrite("", extendClass, overriddenMethodNames, TYPESCRIPT_EXTEND_STRING + declaredClassName);
 			if(config.logger) {
 				config.logger.info(lineToWrite)
 			}
@@ -155,9 +174,26 @@ var es5_visitors = (function () {
 		}
 
 		if(foundInterface) {
-			var arg0 = path.node.arguments[0];
-			var overriddenInterfaceMethods = _getOverriddenMethods(arg0, config);
-			var lineToWrite = _generateLineToWrite("", currentInterface, overriddenInterfaceMethods.join(","));
+			var arg0 = "",
+				arg1;
+			if(path.node.arguments.length === 1) {
+				arg1 = path.node.arguments[0];
+			}
+			else if(path.node.arguments.length === 2) {
+				arg0 = path.node.arguments[0];
+				arg1 = path.node.arguments[1];
+			}
+			else {
+				throw {
+					message: "Not enough or too many arguments passed(" + path.node.arguments.length + ") when trying to extend interface in file: " + config.filePath,
+					errCode: 1
+				}
+			}
+
+			var isCorrectInterfaceName = _testClassName(arg0.value);
+			var overriddenInterfaceMethods = _getOverriddenMethods(arg1, config);
+			var extendInfo = 	FILE_SEPARATOR + config.filePath + LINE_SEPARATOR + path.node.loc.start.line + COLUMN_SEPARATOR + (path.node.loc.start.column + columnOffset) + DECLARED_CLASS_SEPARATOR + (isCorrectInterfaceName ? arg0.value : "");
+			var lineToWrite = _generateLineToWrite("", currentInterface, overriddenInterfaceMethods.join(","), extendInfo);
 			if(config.logger) {
 				config.logger.info(lineToWrite)
 			}
@@ -176,7 +212,7 @@ var es5_visitors = (function () {
 
 		var classNameFromDecorator = _getDecoratorArgument(path, config, customDecoratorName);
 
-		var lineToWrite = _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames);
+		var lineToWrite = _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames, "");
 		if(config.logger) {
 			config.logger.info(lineToWrite)
 		}
@@ -194,65 +230,69 @@ var es5_visitors = (function () {
 			className = "No decorator name found";
 
 		var callee = path.parent.callee;
-		// if(!callee) {
-		// 	throw {
-		// 		message: "You need to call 'extend'. Example: '...extend(\"a.b.C\", {...overrides...})'), file: " + config.filePath,
-		// 		errCode: 1
-		// 	}
-		// }
 
 		if(callee) {
 			var o = callee.object
 			extendClass = _getWholeName(o);
 
-			var arg0 = path.parent.arguments[0];
-			if (t.isStringLiteral(arg0)) {
-				className = arg0.value;
+			var extendArguments = path.parent.arguments;
+			var arg0,
+				arg1;
+			if (extendArguments.length === 1 && t.isObjectExpression(arg0)) {
+				arg0 = extendArguments[0];
+			}
+			else if(t.isStringLiteral(arg0)){
+
+			}
+
+			var arg0 = "",
+				arg1;
+			if(extendArguments.length === 1) {
+				if(t.isObjectExpression(extendArguments[0])) {
+					arg1 = extendArguments[0];
+				} 
+			}
+			else if(extendArguments.length === 2) {
+				if(t.isStringLiteral(extendArguments[0]) && t.isObjectExpression(extendArguments[1])) {
+					arg0 = extendArguments[0];
+					arg1 = extendArguments[1];
+				}
 			}
 			else {
 				throw {
-					message: "The 'extend' you are trying to make needs to have a string as a first parameter. Example: '...extend(\"a.b.C\", {...overrides...})', file: " + config.filePath,
+					message: "Not enough or too many arguments passed(" + path.node.arguments.length + ") when trying to extend class in file: " + config.filePath,
 					errCode: 1
 				}
 			}
 
-			var isCorrectExtendClassName = _testJavaProxyName(className);
-			var isCorrectClassname = _testClassName(className)
-			console.log("---isCorrectExtendClassName=" + isCorrectExtendClassName)
-			console.log("---isCorrectClassname=" + isCorrectClassname)
-
-			if(!isCorrectExtendClassName && !isCorrectClassname) {
-				throw {
-					message: "The 'extend' you are trying to make has an invalid name, file: " + config.filePath,
-					errCode: 1
-				}
-			}
-			//if we don't throw this exception multiple extends will be allowed in one file (think if this is necessary)
-			// if(!isCorrectExtendClassName) {
-			// 	throw {
-			// 		message: "The first argument '" + className + "' of the 'extend' function is not following the right pattern which is: 'namespace.[(namespace.)]ClassName'. Example: '...extend(\"a.b.ClassName\", {overrides...})', file: " + config.filePath,
-			// 		errCode: 1
-			// 	}
-			// }
-
-			var arg1 = path.parent.arguments[1];
+			className = arg0.value ? arg0.value : "";
 			overriddenMethodNames = _getOverriddenMethods(arg1, config);
 
-			var lineToWrite = _generateLineToWrite(isCorrectExtendClassName ? className : "", extendClass.reverse().join("."), overriddenMethodNames);
+			var isCorrectExtendClassName = _testJavaProxyName(className);
+			var isCorrectClassName = _testClassName(className);
+			if(className && !isCorrectClassName && !isCorrectExtendClassName)  {
+				throw {
+					message: "The 'extend' you are trying to make has an invalid name. Example: '...extend(\"a.b.C\", {...overrides...})'), file: " + config.filePath,
+					errCode: 1
+				}
+			}
+
+			var lineToWrite = "";
 			if(isCorrectExtendClassName) {
 				if(config.logger) {
 					config.logger.info(lineToWrite)
 				}
-				
+				lineToWrite =  _generateLineToWrite(isCorrectExtendClassName ? className : "", extendClass.reverse().join("."), overriddenMethodNames, "");
 				customExtendsArr.push(lineToWrite)
+				return;
 			}
-			if(isCorrectClassname) {
-				if(config.logger) {
-					config.logger.info(lineToWrite)
-				}
-				
-				normalExtendsArr.push(lineToWrite)
+
+			if(config.logger) {
+				config.logger.info(lineToWrite)
 			}
+			var extendInfo = FILE_SEPARATOR + config.filePath + LINE_SEPARATOR + path.node.property.loc.start.line + COLUMN_SEPARATOR + (path.node.property.loc.start.column + columnOffset) + DECLARED_CLASS_SEPARATOR + className;
+			lineToWrite =  _generateLineToWrite(isCorrectExtendClassName ? className : "", extendClass.reverse().join("."), overriddenMethodNames, extendInfo);
+			normalExtendsArr.push(lineToWrite)
 		}
 	}
 
@@ -381,15 +421,21 @@ var es5_visitors = (function () {
 	}
 
 	function _testJavaProxyName(name) {
-		return /^((\w+\.)+\w+)$/.test(name)
+		if(name) {
+			return /^((\w+\.)+\w+)$/.test(name)
+		}
+		return false;
 	}
 
 	function _testClassName(name) {
-		return /^(\w+)$/.test(name)
+		if(name) {
+			return /^(\w+)$/.test(name)
+		}
+		return false;
 	}
 
-	function _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames) {
-		var lineToWrite = "EXTEND_CLASS: " + extendClass + " - OVERRIDDEN_METHODS: " + overriddenMethodNames + " - JAVA_FILE: " + classNameFromDecorator;
+	function _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames, extendInfo) {
+		var lineToWrite = "EXTEND_CLASS: " + extendClass + " - EXTEND_HASH: " + extendInfo + " - OVERRIDDEN_METHODS: " + overriddenMethodNames + " - JAVA_FILE: " + classNameFromDecorator;
 		return lineToWrite;
 	}
 
