@@ -1,6 +1,11 @@
+/*
+*	Code takes care of static analysis and generates "out_parsed_typescript.txt"
+*	consisting of information about custom and common bindings that should be generated.
+*/
+
 ///////////////// config /////////////////
 
-var disableLogger = false;
+var disableLogger = true;
 if(process.env.AST_PARSER_DISABLE_LOGGING && process.env.AST_PARSER_DISABLE_LOGGING.trim() === "true") {
 	disableLogger = true;
 }
@@ -18,7 +23,6 @@ var fs = require("fs"),
 	logger = require('./helpers/logger')(loggingSettings),
 	path = require("path"),
 	stringify = require("./helpers/json_extension"),
-	// es5_visitors = require("./visitors/es6-visitors"),
 	es5_visitors = require("./visitors/es5-visitors"),
 	t = require("babel-types"),
 	filewalker = require('filewalker'),
@@ -46,7 +50,6 @@ if(arguments && arguments.length >= 4) {
 	outFile = arguments[3]
 	console.log("outFile: " + outFile)
 }
-
 
 var interfaceNames = ["android.app.Application.ActivityLifecycleCallbacks"];
 
@@ -78,6 +81,7 @@ createFile(outFile)
 
 /////////////// execute ////////////////
 
+// ENTRY POINT!
 var traverseFilesDir = function(filesDir) {
 	if(!fs.existsSync(filesDir)) {
 		throw "The input dir: " + filesDir + " does not exist!";
@@ -159,19 +163,22 @@ var visitAst = function (data, err) {
 					filePath: data.filePath,
 					interfaceNames: interfaceNames
 				};
-				es5_visitors.customExtendVisitor(path, decoratorConfig);
+				es5_visitors.es5Visitor(path, decoratorConfig);
 				// es5_visitors.interfaceVisitor(path, interfaceNames, decoratorConfig);
 			}
 		})
 
-		var customExtendsArr = es5_visitors.customExtendVisitor.getProxyExtendInfo().join("\n")
-		var normalExtendsArr = es5_visitors.customExtendVisitor.getCommonExtendInfo().join("\n")
-		var interfacesArr = es5_visitors.customExtendVisitor.getInterfaceInfo().join("\n")
+		var customExtendsArr = es5_visitors.es5Visitor.getProxyExtendInfo().join("\n")
+		var normalExtendsArr = es5_visitors.es5Visitor.getCommonExtendInfo().join("\n")
+		var interfacesArr = es5_visitors.es5Visitor.getInterfaceInfo().join("\n")
 
+		console.log("-------")
 		console.log("customExtendsArr:")
 		console.log(customExtendsArr)
+		console.log("-------")
 		console.log("normalExtendsArr:")
 		console.log(normalExtendsArr)
+		console.log("-------")
 		console.log("interfcace:")
 		console.log(interfacesArr)
 		// return resolve(interfacesArr)

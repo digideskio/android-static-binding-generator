@@ -161,49 +161,18 @@ global.__onLiveSync = function () {
     appModule.loadCss();
     frame.reloadPage();
 };
-var MyClass = (function (_super) {
-    __extends(MyClass, _super);
-    function MyClass() {
-        _super.apply(this, arguments);
-    }
-    MyClass.prototype.MyClassMethod1 = function () {
-        console.log("smth");
-    };
-    MyClass.prototype.MyClassMethod2 = function () {
-        console.log("smth");
-    };
-    MyClass = __decorate([
-        JavaProxy("asd.asd.As")
-    ], MyClass);
-    return MyClass;
-})(android.view.ViewGroup);
-
 
 //////////// extended interface
 var initEvents = function () {
     var androidApp = exports.android;
     var lifecycleCallbacks = new android.app.Application.ActivityLifecycleCallbacks({
-        onActivityCreated: function (activity, bundle) {
-
-        },
-        onActivityDestroyed: function (activity) {
-
-        },
-        onActivityPaused: function (activity) {
-
-        },
-        onActivityResumed: function (activity) {
-          
-        },
-        onActivitySaveInstanceState: function (activity, bundle) {
-           
-        },
-        onActivityStarted: function (activity) {
-          
-        },
-        onActivityStopped: function (activity) {
-            
-        }
+        onActivityCreated: function (activity, bundle) {},
+        onActivityDestroyed: function (activity) {},
+        onActivityPaused: function (activity) {},
+        onActivityResumed: function (activity) {},
+        onActivitySaveInstanceState: function (activity, bundle) {},
+        onActivityStarted: function (activity) {},
+        onActivityStopped: function (activity) {}
     });
     return lifecycleCallbacks;
 };
@@ -211,63 +180,48 @@ var initEvents = function () {
 
 ////////// ts parsed //////////
 	//java proxy with extends
-var AnotherClass = (function (_super) {
-    __extends(AnotherClass, _super);
-    function AnotherClass() {
+var TestClass = (function (_super) {
+    __extends(TestClass, _super);
+    function TestClass() {
         _super.apply(this, arguments);
     }
-    AnotherClass.prototype.AnotherClassMethod1 = function () {
-        console.log("smth");
+    TestClass.prototype.TestClassMethod1 = function () {
     };
-    AnotherClass.prototype.AnotherClassMethod2 = function () {
-        console.log("smth");
+    TestClass.prototype.TestClassMethod2 = function () {
     };
-    Object.defineProperty(AnotherClass.prototype, "AnotherClassMethod1",
-        __decorate([
-            MyMethodDecorator
-        ], AnotherClass.prototype, "AnotherClassMethod1", Object.getOwnPropertyDescriptor(AnotherClass.prototype, "AnotherClassMethod1")));
-    AnotherClass = __decorate([
-        JavaProxy("aaa.bbbb.Ccc"),
-        AnotherClassDecorator("dddd.eeee.Fff")
-    ], AnotherClass);
-    return AnotherClass;
-})(android.view.Tralala);
+    TestClass = __decorate([
+        JavaProxy("javaProxy.path.Present")
+    ], TestClass);
+    return TestClass;
+})(passed.extend.Present);
 
-	//java proxy no extend
-var AnotherClass = (function () {
-    function AnotherClass() {
+	//java proxy no extend (we wont support this scenario)
+    // if you want to have java proxy you will have to extend a speciffic class
+var TestClass = (function () {
+    function TestClass() {
     }
-    AnotherClass.prototype.NoExtennnddd111 = function () {
-        console.log("smth");
+    TestClass.prototype.TestClassMethod1 = function () {
     };
-    AnotherClass.prototype.NoExtennnddd11111 = function () {
-        console.log("smth");
+    TestClass.prototype.TestClassMethod2 = function () {
     };
-    Object.defineProperty(AnotherClass.prototype, "AnotherClassMethod1",
-        __decorate([
-            MyMethodDecorator
-        ], AnotherClass.prototype, "AnotherClassMethod1", Object.getOwnPropertyDescriptor(AnotherClass.prototype, "AnotherClassMethod1")));
-    AnotherClass = __decorate([
-        JavaProxy("java.proxy.NoExtend11111"),
-        AnotherClassDecorator("dddd.eeee.Fff")
-    ], AnotherClass);
-    return AnotherClass;
+    TestClass = __decorate([
+        JavaProxy("javaProxy.path.Present")
+    ], TestClass);
+    return TestClass;
 })();
 
 	//no java proxy with extends
-var ZZZZZ = (function (_super) {
+var TestClass = (function (_super) {
     __extends(ZZZZZ, _super);
-    function ZZZZZ() {
+    function TestClass() {
         _super.apply(this, arguments);
     }
-    ZZZZZ.prototype.ZZZZZZZZ = function () {
-        console.log("smth");
+    TestClass.prototype.TestClassMethod1 = function () {
     };
-    ZZZZZ.prototype.ZZZZZZZZZZZZZZ = function () {
-        console.log("smth");
+    TestClass.prototype.TestClassMethod2 = function () {
     };
-    return ZZZZZ;
-})(no.java.proxy.yes.Extend);
+    return TestClass;
+})(passed.extend.Present);
 
 	//no java proxy no extends
 var SSSSSS = (function () {
@@ -286,12 +240,10 @@ var SSSSSS = (function () {
 ///////// es5 //////////
 	//custom java proxy extends
 (function () {
-    var MyButton = android.widget.Button2222.extend("my.custom.ClassFromOriginalTest", {
-        onClick222222: function () {
-            console.log('click happened');
+    var MyButton = android.widget.Button.extend("my.custom.TestClass", {
+        onClick1: function () {
         },
-        onClick222222222222: function () {
-            console.log('click happened');
+        onClick2: function () {
         }
     });
 })();
@@ -306,15 +258,10 @@ var MyButton = android.widget.Button1111.extend("my.custom.ClassFromSubFolder", 
 });
 
 	// common extend
-var a = andrd.vw.Btn.extend("something_valid_123", {
-	func1: function () {
-		
-	},
-	func2: function () {
-		
-	},
-	func3: function () {
-		
-	}
+var MyButton = android.widget.Button333.extend("TestClass333", {
+    onClick1333: function () {
+    },
+    onClick2333: function () {
+    }
 })
 
