@@ -26,12 +26,15 @@ var fs = require("fs"),
 	es5_visitors = require("./visitors/es5-visitors"),
 	t = require("babel-types"),
 	filewalker = require('filewalker'),
+	lazy = require("lazy");
 
 	arguments = process.argv,
 	appDir = path.dirname(require.main.filename),
-	extendDecoratorName = "JavaProxy", // TODO: think about name
+	extendDecoratorName = "JavaProxy",
 	outFile = "out/out_parsed_typescript.txt", //default out file
-	inputDir = "input_parced_typescript";
+	inputDir = "input_parced_typescript", //default input folder
+	interfacesNamesFilePath = "./interfaces-names.txt", //default interace_names file path
+	interfaceNames = [];
 
 //env variables
 if(process.env.AST_PARSER_OUT_FILE) {
@@ -40,6 +43,10 @@ if(process.env.AST_PARSER_OUT_FILE) {
 if(process.env.AST_PARSER_INPUT_DIR) {
 	inputDir = process.env.AST_PARSER_INPUT_DIR.trim();
 }
+if(process.env.AST_PARSER_INTERFACE_FILE_PATH) {
+	inputDir = process.env.AST_PARSER_INTERFACE_FILE_PATH.trim();
+}
+
 
 //console variables have priority
 if(arguments && arguments.length >= 3) {
@@ -50,11 +57,10 @@ if(arguments && arguments.length >= 4) {
 	outFile = arguments[3]
 	console.log("outFile: " + outFile)
 }
-
-// todo: pass interface names
-var interfaceNames = ["android.app.Application.ActivityLifecycleCallbacks",
-					"android.view.View.OnClickListener",
-					"android.view.View.OnClickListener111"];
+if(arguments && arguments.length >= 5) {
+	outFile = arguments[4]
+	console.log("interface_names+_path: " + interfacesNamesFilePath)
+}
 
 /////////////// PREPARATION ////////////////
 function cleanOutFile(filePath) {
@@ -84,16 +90,15 @@ createFile(outFile)
 
 /////////////// EXECUTE ////////////////
 
-// ENTRY POINT!
 /*
 *	Traverses a given input directory and attempts to visit every ".js" file.
 *	It passes each found file down the line.
 */
 var traverseFilesDir = function(filesDir) {
+
 	if(!fs.existsSync(filesDir)) {
 		throw "The input dir: " + filesDir + " does not exist!";
 	}
-
 	filewalker(filesDir)
 		.on("file", function (file, info) {
 			if(file.substring(file.length - 3, file.length) === '.js') {
@@ -113,7 +118,28 @@ var traverseFilesDir = function(filesDir) {
 		.walk();
 }
 
-traverseFilesDir(inputDir);
+// ENTRY POINT!
+/*
+*	Get's pregenerated interface names from "interfacesNamesFilePath"
+*	After reading interface names runs the visiting api
+*/
+function readInterfaceNames() {
+	return new Promise(function (resolve, reject) {		
+		new lazy(fs.createReadStream(interfacesNamesFilePath))
+		.lines
+		.forEach(function(line){
+			 interfaceNames.push(line.toString());
+			 // console.log(line.toString());
+	    }).on('pipe', function (err) {
+	    	if(err) {
+	    		reject(false);
+	    	}
+	 		resolve(inputDir);
+		});
+	})
+}
+readInterfaceNames().then(traverseFilesDir)
+
 
 /*
 *	Gets the file content as text and passes it down the line.
