@@ -1,6 +1,10 @@
 /*
 *	Code takes care of static analysis and generates "out_parsed_typescript.txt"
 *	The output file consists of information about custom and common bindings that should be generated.
+* 	
+*	test command:
+*		node transpiled_ts_parser.js "input\dir\path" "output\file\path" "interface\names\file\path"
+*		node transpiled_ts_parser.js "D:\work\android-static-binding-generator\project\input_parced_typescript" "D:\work\android-static-binding-generator\project\out\out_parsed_typescript.txt" "D:\work\android-static-binding-generator\project\interface-name-generator\interfaces-names.txt"
 */
 
 ///////////////// CONFIGURATION /////////////////
@@ -58,8 +62,8 @@ if(arguments && arguments.length >= 4) {
 	console.log("outFile: " + outFile)
 }
 if(arguments && arguments.length >= 5) {
-	outFile = arguments[4]
-	console.log("interface_names+_path: " + interfacesNamesFilePath)
+	interfacesNamesFilePath = arguments[4]
+	console.log("interface names path: " + interfacesNamesFilePath)
 }
 
 /////////////// PREPARATION ////////////////
@@ -99,6 +103,7 @@ var traverseFilesDir = function(filesDir) {
 	if(!fs.existsSync(filesDir)) {
 		throw "The input dir: " + filesDir + " does not exist!";
 	}
+
 	filewalker(filesDir)
 		.on("file", function (file, info) {
 			if(file.substring(file.length - 3, file.length) === '.js') {
@@ -222,7 +227,6 @@ var visitAst = function (data, err) {
 		var interfacesArr = es5_visitors.es5Visitor.getInterfaceInfo()
 
 		var res = customExtendsArr.concat(normalExtendsArr).concat(interfacesArr).filter(onlyUnique).join("\n");
-
 		return resolve(res)
 	});
 }
