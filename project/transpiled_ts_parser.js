@@ -1,9 +1,9 @@
 /*
 *	Code takes care of static analysis and generates "out_parsed_typescript.txt"
-*	consisting of information about custom and common bindings that should be generated.
+*	The output file consists of information about custom and common bindings that should be generated.
 */
 
-///////////////// config /////////////////
+///////////////// CONFIGURATION /////////////////
 
 var disableLogger = true;
 if(process.env.AST_PARSER_DISABLE_LOGGING && process.env.AST_PARSER_DISABLE_LOGGING.trim() === "true") {
@@ -51,11 +51,12 @@ if(arguments && arguments.length >= 4) {
 	console.log("outFile: " + outFile)
 }
 
+// todo: pass interface names
 var interfaceNames = ["android.app.Application.ActivityLifecycleCallbacks",
 					"android.view.View.OnClickListener",
 					"android.view.View.OnClickListener111"];
 
-/////////////// init ////////////////
+/////////////// PREPARATION ////////////////
 function cleanOutFile(filePath) {
 	fs.truncateSync(filePath, 0);
 	logger.info("+cleared out file: " + filePath);
@@ -81,9 +82,13 @@ function ensureDirectories(filePath) {
 }
 createFile(outFile)
 
-/////////////// execute ////////////////
+/////////////// EXECUTE ////////////////
 
 // ENTRY POINT!
+/*
+*	Traverses a given input directory and attempts to visit every ".js" file.
+*	It passes each found file down the line.
+*/
 var traverseFilesDir = function(filesDir) {
 	if(!fs.existsSync(filesDir)) {
 		throw "The input dir: " + filesDir + " does not exist!";
@@ -110,6 +115,9 @@ var traverseFilesDir = function(filesDir) {
 
 traverseFilesDir(inputDir);
 
+/*
+*	Gets the file content as text and passes it down the line.
+*/
 var readFile = function (filePath, err) {
 	return new Promise(function (resolve, reject) {
 
@@ -130,6 +138,9 @@ var readFile = function (filePath, err) {
 	});
 }
 
+/*
+*	Get's the AST (https://en.wikipedia.org/wiki/Abstract_syntax_tree) from the file content and passes it down the line.
+*/
 var astFromFileContent = function (data, err) {
 	return new Promise(function (resolve, reject) {
 
@@ -149,6 +160,10 @@ var astFromFileContent = function (data, err) {
 	});
 };
 
+/*
+*	Visist's the passed AST with a given visitor and extracts nativescript speciffic data.
+*	Passes the extracted bindings data down the line.
+*/
 var visitAst = function (data, err) {
 	return new Promise (function (resolve, reject) {
 		if(err) {
@@ -213,6 +228,10 @@ var writeToFile = function(data, err) {
 	});
 }
 
+/*
+*	If there is an exception anywhere down the line it's caught here
+*	If the error is criticalthe process is exited.
+*/
 var exceptionHandler = function (reason) {
 	if(reason.errCode && reason.errCode === 1) {
 		logger.error("(*)(*)(*)Error: Exception Handler Caught: " + reason.message);
