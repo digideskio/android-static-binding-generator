@@ -179,7 +179,7 @@ var visitAst = function (data, err) {
 				var decoratorConfig = {
 					logger: logger,
 					extendDecoratorName: extendDecoratorName,
-					filePath: data.filePath.substring(inputDir.length, (data.filePath.length - 3)),
+					filePath: data.filePath.substring(inputDir.length + 1, (data.filePath.length - 3)),
 					interfaceNames: interfaceNames
 				};
 				es5_visitors.es5Visitor(path, decoratorConfig);
@@ -187,11 +187,12 @@ var visitAst = function (data, err) {
 			}
 		})
 
-		var customExtendsArr = es5_visitors.es5Visitor.getProxyExtendInfo().join("\n")
-		var normalExtendsArr = es5_visitors.es5Visitor.getCommonExtendInfo().join("\n")
-		var interfacesArr = es5_visitors.es5Visitor.getInterfaceInfo().join("\n")
-		
-		var res = customExtendsArr + "\n" + normalExtendsArr + "\n" + interfacesArr;
+		var customExtendsArr = es5_visitors.es5Visitor.getProxyExtendInfo().join("\n").trim()
+		var normalExtendsArr = es5_visitors.es5Visitor.getCommonExtendInfo().join("\n").trim()
+		var interfacesArr = es5_visitors.es5Visitor.getInterfaceInfo().join("\n").trim()
+
+		var res = [customExtendsArr, normalExtendsArr, interfacesArr];
+
 		// console.log("\n\nrunning in file " + data.filePath);
 		// console.log("-------")
 		// console.log("customExtendsArr:")
@@ -203,7 +204,7 @@ var visitAst = function (data, err) {
 		// console.log("interfcace:")
 		// console.log(interfacesArr)
 		// return resolve(interfacesArr)
-		return resolve(res)
+		return resolve(res.filter(function (p) {return p}).join("\n"))
 	});
 }
 

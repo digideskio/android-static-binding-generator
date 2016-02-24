@@ -7,12 +7,9 @@ var MyClass = (function (_super) {
     };
     MyClass.prototype.MyClassMethod1111 = function () {
     };
-    MyClass = __decorate([
-        JavaProxy("asd.asd.As111")
-    ], MyClass);
     return MyClass;
 })(android.view.ViewGroup1111);
-var MyButton = android.widget.Button22222222.extend("my.custom.ClassFromOrigina2222222222", {
+var MyButton = android.widget.Button22222222.extend("ClassFromOrigina2222222222", {
 	onClick222222: function () {
 	},
 	onClick222222222: function () {

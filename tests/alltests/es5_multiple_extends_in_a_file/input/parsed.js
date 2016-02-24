@@ -1,9 +1,6 @@
 (function () {
-    var MyButton = android.widget.Button1111111111.extend("my.custom.ClassFromOrigina1111111", {
+    var MyButton = android.widget.Button1111111111.extend("ClassFromOrigina1111111", {
         onClick111111: function () {
-            console.log('click happened');
-        },
-        onClick111111111: function () {
             console.log('click happened');
         }
     });
@@ -25,7 +22,7 @@ var MyButton = android.widget.Button333333.extend("my.custom.ClassFromOrigina333
 	}
 });
 (function () {
-    var MyButton = android.widget.Button44444444.extend("my.custom.ClassFromOrigina44444", {
+    var MyButton = android.widget.Button44444444.extend("ClassFromOrigina44444", {
         onClick4444: function () {
             console.log('click happened');
         },

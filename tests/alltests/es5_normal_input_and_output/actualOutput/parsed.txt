@@ -1,2 +1,0 @@
-EXTEND_CLASS: android.widget.Button2222 - EXTEND_HASH:  - OVERRIDDEN_METHODS: onClick222222,onClick222222222222 - JAVA_FILE: my.custom.ClassFromOriginalTest
-

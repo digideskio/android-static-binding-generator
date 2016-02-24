@@ -1,2 +1,0 @@
-EXTEND_CLASS: android.view.ViewGroup - EXTEND_HASH:  - OVERRIDDEN_METHODS: MyClassMethod1,MyClassMethod2 - JAVA_FILE: asd.asd.As
-

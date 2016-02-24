@@ -247,20 +247,26 @@ var es5_visitors = (function () {
 
 			var arg0 = "",
 				arg1;
-			if(extendArguments.length === 1) {
-				if(t.isObjectExpression(extendArguments[0])) {
+			if(extendArguments.length) {
+				if(extendArguments.length === 1 && t.isObjectExpression(extendArguments[0])) {
 					arg1 = extendArguments[0];
-				} 
-			}
-			else if(extendArguments.length === 2) {
-				if(t.isStringLiteral(extendArguments[0]) && t.isObjectExpression(extendArguments[1])) {
-					arg0 = extendArguments[0];
-					arg1 = extendArguments[1];
+				}
+				else if(extendArguments.length === 2) {
+					if(t.isStringLiteral(extendArguments[0]) && t.isObjectExpression(extendArguments[1])) {
+						arg0 = extendArguments[0];
+						arg1 = extendArguments[1];
+					}
+				}
+				else {
+					throw {
+						message: "Not enough or too many arguments passed(" + extendArguments.length + ") when trying to extend class in file: " + config.filePath,
+						errCode: 1
+					}
 				}
 			}
 			else {
 				throw {
-					message: "Not enough or too many arguments passed(" + path.node.arguments.length + ") when trying to extend class in file: " + config.filePath,
+					message: "You need to call the extend with parameters. Example: '...extend(\"a.b.C\", {...overrides...})') in file: " + config.filePath,
 					errCode: 1
 				}
 			}
@@ -293,6 +299,12 @@ var es5_visitors = (function () {
 			var extendInfo = FILE_SEPARATOR + config.filePath + LINE_SEPARATOR + path.node.property.loc.start.line + COLUMN_SEPARATOR + (path.node.property.loc.start.column + columnOffset) + DECLARED_CLASS_SEPARATOR + className;
 			lineToWrite =  _generateLineToWrite(isCorrectExtendClassName ? className : "", extendClass.reverse().join("."), overriddenMethodNames, extendInfo);
 			normalExtendsArr.push(lineToWrite)
+		}
+		else {
+				throw {
+					message: "You need to call the extend '...extend(\"extend_name\", {...overrides...})'), file: " + config.filePath,
+					errCode: 1
+				}
 		}
 	}
 
@@ -428,14 +440,15 @@ var es5_visitors = (function () {
 	}
 
 	function _testClassName(name) {
-		if(name) {
+		if(name && name != "") {
 			return /^(\w+)$/.test(name)
 		}
 		return false;
 	}
 
 	function _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames, extendInfo) {
-		var lineToWrite = "EXTEND_CLASS: " + extendClass + " - EXTEND_HASH: " + extendInfo + " - OVERRIDDEN_METHODS: " + overriddenMethodNames + " - JAVA_FILE: " + classNameFromDecorator;
+		// var lineToWrite = "EXTEND_CLASS: " + extendClass + " - EXTEND_HASH: " + extendInfo + " - OVERRIDDEN_METHODS: " + overriddenMethodNames + " - JAVA_FILE: " + classNameFromDecorator;
+		var lineToWrite = extendClass + "*" + extendInfo + "*" + overriddenMethodNames + "*" + classNameFromDecorator;
 		return lineToWrite;
 	}
 
