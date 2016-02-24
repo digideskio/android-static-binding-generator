@@ -1,1 +1,2 @@
-Java File: my.custom.ClassFromOriginalTest - Extend Class: android.widget.Button2222 - Overridden Methods: onClick222222,onClick222222222222
+EXTEND_CLASS: android.widget.Button2222 - EXTEND_HASH:  - OVERRIDDEN_METHODS: onClick222222,onClick222222222222 - JAVA_FILE: my.custom.ClassFromOriginalTest
+

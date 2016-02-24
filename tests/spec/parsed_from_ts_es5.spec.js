@@ -1,5 +1,3 @@
-require("process").chdir("project");
-
 var exec = require("child_process").exec,
 	path = require("path"),
 	fs = require("fs"),
@@ -34,11 +32,10 @@ describe("ES5 generated from parsing typescript", function(){
 
 		exec("node transpiled_ts_parser.js " + inputDir + " " + actualFile, function (err) {
 
-			var expectedContent = fs.readFileSync(expectedFile, "utf-8");
 			var actualContent = fs.readFileSync(actualFile, "utf-8");
 
 			expect(err).toBe(null)
-			expect(expectedContent).toBe(actualContent)
+			expect("").toBe(actualContent.trim())
 
 			done();
 		})

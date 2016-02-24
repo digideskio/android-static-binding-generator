@@ -1,3 +1,4 @@
-Java File: asd.asd.As11111 - Extend Class: android.view.ViewGroup11111 - Overridden Methods: MyClassMethod11111,MyClassMethod1111111
-Java File: asd.asd.As33333 - Extend Class: android.view.ViewGroup3333 - Overridden Methods: MyClassMethod33333,MyClassMethod33333
-Java File: asd.asd.As22222 - Extend Class: android.view.ViewGroup222222 - Overridden Methods: MyClassMethod22222,MyClassMethod2222
+EXTEND_CLASS: android.view.ViewGroup11111 - EXTEND_HASH:  - OVERRIDDEN_METHODS: MyClassMethod11111,MyClassMethod1111111 - JAVA_FILE: asd.asd.As11111
+EXTEND_CLASS: android.view.ViewGroup3333 - EXTEND_HASH:  - OVERRIDDEN_METHODS: MyClassMethod33333,MyClassMethod33333 - JAVA_FILE: asd.asd.As33333
+EXTEND_CLASS: android.view.ViewGroup222222 - EXTEND_HASH:  - OVERRIDDEN_METHODS: MyClassMethod22222,MyClassMethod2222 - JAVA_FILE: asd.asd.As22222
+

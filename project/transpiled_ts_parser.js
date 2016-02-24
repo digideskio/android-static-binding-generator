@@ -5,7 +5,7 @@
 
 ///////////////// CONFIGURATION /////////////////
 
-var disableLogger = true;
+var disableLogger = false;
 if(process.env.AST_PARSER_DISABLE_LOGGING && process.env.AST_PARSER_DISABLE_LOGGING.trim() === "true") {
 	disableLogger = true;
 }
@@ -101,9 +101,9 @@ var traverseFilesDir = function(filesDir) {
 
 				readFile(currentFileName)
 					.then(astFromFileContent)
-					.then(writeToFile)
-					.then(visitAst)
 					// .then(writeToFile)
+					.then(visitAst)
+					.then(writeToFile)
 					.catch(exceptionHandler)
 			}
 		})
@@ -190,19 +190,20 @@ var visitAst = function (data, err) {
 		var customExtendsArr = es5_visitors.es5Visitor.getProxyExtendInfo().join("\n")
 		var normalExtendsArr = es5_visitors.es5Visitor.getCommonExtendInfo().join("\n")
 		var interfacesArr = es5_visitors.es5Visitor.getInterfaceInfo().join("\n")
-
-		console.log("\n\nrunning in file " + data.filePath);
-		console.log("-------")
-		console.log("customExtendsArr:")
-		console.log(customExtendsArr)
-		console.log("-------")
-		console.log("normalExtendsArr:")
-		console.log(normalExtendsArr)
-		console.log("-------")
-		console.log("interfcace:")
-		console.log(interfacesArr)
+		
+		var res = customExtendsArr + "\n" + normalExtendsArr + "\n" + interfacesArr;
+		// console.log("\n\nrunning in file " + data.filePath);
+		// console.log("-------")
+		// console.log("customExtendsArr:")
+		// console.log(customExtendsArr)
+		// console.log("-------")
+		// console.log("normalExtendsArr:")
+		// console.log(normalExtendsArr)
+		// console.log("-------")
+		// console.log("interfcace:")
+		// console.log(interfacesArr)
 		// return resolve(interfacesArr)
-		return resolve(data)
+		return resolve(res)
 	});
 }
 
@@ -211,7 +212,7 @@ var writeToFile = function(data, err) {
 	return new Promise (function (resolve, reject) {
 
 		// fs.appendFile(outFile, stringify(data), function (writeFileError) {
-		fs.appendFile(outFile, JSON.stringify(data, null, 4), function (writeFileError) {
+		fs.appendFile(outFile, data, function (writeFileError) {
 			if(err) {
 				logger.warn("Error from writeToFile: " + err);
 				return reject(err);

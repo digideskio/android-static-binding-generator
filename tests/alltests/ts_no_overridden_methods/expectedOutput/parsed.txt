@@ -1,1 +1,2 @@
-Java File: asd.asd.As - Extend Class: android.view.ViewGroup - Overridden Methods: 
+EXTEND_CLASS: android.view.ViewGroup - EXTEND_HASH:  - OVERRIDDEN_METHODS:  - JAVA_FILE: asd.asd.As
+
