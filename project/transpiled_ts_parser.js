@@ -5,7 +5,7 @@
 
 ///////////////// CONFIGURATION /////////////////
 
-var disableLogger = false;
+var disableLogger = true;
 if(process.env.AST_PARSER_DISABLE_LOGGING && process.env.AST_PARSER_DISABLE_LOGGING.trim() === "true") {
 	disableLogger = true;
 }
@@ -160,6 +160,11 @@ var astFromFileContent = function (data, err) {
 	});
 };
 
+//only unique filter
+function onlyUnique(value, index, self) {
+	return self.indexOf(value) === index;
+}
+
 /*
 *	Visist's the passed AST with a given visitor and extracts nativescript speciffic data.
 *	Passes the extracted bindings data down the line.
@@ -183,28 +188,16 @@ var visitAst = function (data, err) {
 					interfaceNames: interfaceNames
 				};
 				es5_visitors.es5Visitor(path, decoratorConfig);
-				// es5_visitors.interfaceVisitor(path, interfaceNames, decoratorConfig);
 			}
 		})
 
-		var customExtendsArr = es5_visitors.es5Visitor.getProxyExtendInfo().join("\n").trim()
-		var normalExtendsArr = es5_visitors.es5Visitor.getCommonExtendInfo().join("\n").trim()
-		var interfacesArr = es5_visitors.es5Visitor.getInterfaceInfo().join("\n").trim()
+		var customExtendsArr = es5_visitors.es5Visitor.getProxyExtendInfo()
+		var normalExtendsArr = es5_visitors.es5Visitor.getCommonExtendInfo()
+		var interfacesArr = es5_visitors.es5Visitor.getInterfaceInfo()
 
-		var res = [customExtendsArr, normalExtendsArr, interfacesArr];
+		var res = customExtendsArr.concat(normalExtendsArr).concat(interfacesArr).filter(onlyUnique).join("\n");
 
-		// console.log("\n\nrunning in file " + data.filePath);
-		// console.log("-------")
-		// console.log("customExtendsArr:")
-		// console.log(customExtendsArr)
-		// console.log("-------")
-		// console.log("normalExtendsArr:")
-		// console.log(normalExtendsArr)
-		// console.log("-------")
-		// console.log("interfcace:")
-		// console.log(interfacesArr)
-		// return resolve(interfacesArr)
-		return resolve(res.filter(function (p) {return p}).join("\n"))
+		return resolve(res)
 	});
 }
 
@@ -212,21 +205,24 @@ var writeToFile = function(data, err) {
 
 	return new Promise (function (resolve, reject) {
 
-		// fs.appendFile(outFile, stringify(data), function (writeFileError) {
-		fs.appendFile(outFile, data, function (writeFileError) {
-			if(err) {
-				logger.warn("Error from writeToFile: " + err);
-				return reject(err);
-			}
-			if(writeFileError) {				
-				logger.warn("Error writing file: " + writeFileError);
-				return reject(writeFileError);
-			}
+		if(data.trim() != "") {
 
-			logger.info("+appended '" + data + "' to file: " + outFile);
-			return resolve(data);
-			
-		});
+			// fs.appendFile(outFile, stringify(data), function (writeFileError) {
+			fs.appendFile(outFile, data + "\n", function (writeFileError) {
+				if(err) {
+					logger.warn("Error from writeToFile: " + err);
+					return reject(err);
+				}
+				if(writeFileError) {				
+					logger.warn("Error writing file: " + writeFileError);
+					return reject(writeFileError);
+				}
+
+				logger.info("+appended '" + data + "' to file: " + outFile);
+				return resolve(data);
+				
+			});
+		}
 	});
 }
 

@@ -106,7 +106,24 @@ var MainActivity = {
   //   		someMethod2: function(){}
   //   	})
 		
-		var B = android.widget.Button.extend("asd")
+		var CssClassSelector = (function (_super) {
+			__extends(CssClassSelector, _super);
+			function CssClassSelector() {
+				_super.apply(this, arguments);
+			}
+			Object.defineProperty(CssClassSelector.prototype, "specificity", {
+				get: function () {
+					return CLASS_SPECIFICITY;
+				},
+				enumerable: true,
+				configurable: true
+			});
+			CssClassSelector.prototype.matches = function (view) {
+			};
+			return CssClassSelector;
+		})(CssSelector);
+
+		// var B = android.widget.Button.extend("asd")
 		
     	// var a = new B(this);
     	

@@ -73,7 +73,12 @@ var es5_visitors = (function () {
 	*	Returns the common extends array generated from visitor
 	*/
 	es5Visitor.getCommonExtendInfo = function () {
-		var res = normalExtendsArr.slice();
+		var res = normalExtendsArr.slice().filter(function (p) {
+			if(p.startsWith("*")) {
+				return false;
+			}
+			return p;
+		});
 		normalExtendsArr = [];
 		return res;
 	}
@@ -225,10 +230,6 @@ var es5_visitors = (function () {
 	*	Left whole for readability.
 	*/
 	function traverseEs5Extend(path, config) {
-		var overriddenMethodNames = [],
-			extendClass = [],
-			className = "No decorator name found";
-
 		var callee = path.parent.callee;
 
 		if(callee) {
@@ -350,7 +351,7 @@ var es5_visitors = (function () {
 
 		if(extendedClass) {
 			if(t.isCallExpression(extendedClass.node)) {
-				var o = extendedClass.node.arguments[0];	
+				var o = extendedClass.node.arguments[0];
 			}
 			else {
 				throw {
