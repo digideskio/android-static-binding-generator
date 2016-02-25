@@ -448,8 +448,7 @@ var es5_visitors = (function () {
 	}
 
 	function _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames, extendInfo) {
-		// var lineToWrite = "EXTEND_CLASS: " + extendClass + " - EXTEND_HASH: " + extendInfo + " - OVERRIDDEN_METHODS: " + overriddenMethodNames + " - JAVA_FILE: " + classNameFromDecorator;
-		var lineToWrite = extendClass + "*" + extendInfo + "*" + overriddenMethodNames + "*" + classNameFromDecorator;
+		var lineToWrite = extendClass + "*" + extendInfo.replace(/[\\-]/g, "_") + "*" + overriddenMethodNames + "*" + classNameFromDecorator;
 		return lineToWrite;
 	}
 
