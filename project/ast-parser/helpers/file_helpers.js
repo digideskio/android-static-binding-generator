@@ -13,7 +13,7 @@ module.exports = function Helpers(config) {
 		if(ensureDirectories(filePath)) {
 			fs.writeFileSync(filePath, "");
 			if(config && config.logger) {
-				config.logger.info("+created ast output file: " + path.join(appDir, outFile));
+				config.logger.info("+created ast output file: ");
 			}
 		}
 		cleanOutFile(filePath)

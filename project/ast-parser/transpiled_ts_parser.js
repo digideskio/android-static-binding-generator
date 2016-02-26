@@ -31,7 +31,8 @@ var fs = require("fs"),
 	es5_visitors = require("./visitors/es5-visitors"),
 	t = require("babel-types"),
 	filewalker = require('filewalker'),
-	lazy = require("lazy");
+	lazy = require("lazy"),
+	eol = require('os').EOL,
 
 	arguments = process.argv,
 	appDir = path.dirname(require.main.filename),
@@ -204,7 +205,7 @@ var visitAst = function (data, err) {
 		var normalExtendsArr = es5_visitors.es5Visitor.getCommonExtendInfo()
 		var interfacesArr = es5_visitors.es5Visitor.getInterfaceInfo()
 
-		var res = customExtendsArr.concat(normalExtendsArr).concat(interfacesArr).filter(onlyUnique).join("\n");
+		var res = customExtendsArr.concat(normalExtendsArr).concat(interfacesArr).filter(onlyUnique).join(eol);
 		return resolve(res)
 	});
 }
@@ -216,7 +217,7 @@ var writeToFile = function(data, err) {
 		if(data.trim() != "") {
 
 			// fs.appendFile(outFile, stringify(data), function (writeFileError) {
-			fs.appendFile(outFile, data + "\n", function (writeFileError) {
+			fs.appendFile(outFile, data + eol, function (writeFileError) {
 				if(err) {
 					logger.warn("Error from writeToFile: " + err);
 					return reject(err);
