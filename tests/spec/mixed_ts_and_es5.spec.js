@@ -1,4 +1,4 @@
-require("process").chdir("project");
+require("process").chdir("project/ast-parser");
 
 var exec = require("child_process").exec,
 	path = require("path"),

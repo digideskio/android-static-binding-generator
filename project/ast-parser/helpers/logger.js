@@ -1,15 +1,16 @@
 var fs = require('fs'),
 	path = require('path'),
-	os = require('os');
+	os = require('os'),
+    fileHelpers = require("./file_helpers")();
 
 module.exports = function(setting){
 	
-    var logDirectory = setting.logDirectory;
+    var logDirectory = path.dirname(setting.logPath);
     if (!fs.existsSync(logDirectory)){
-        console.error("ERROR ACCESSING TO LOG FILE DIRECTORY :" + logDirectory);
-        process.exit(-1);
+        console.error("couldn't find logDirectory so it will be created in place:" + setting.logPath);
+        fileHelpers.ensureDirectories(setting.logPath);
     }
-    if (os.type().indexOf('Windows') === -1){
+    if (os.type().indexOf('Windows') === -1) {
         var appLogStat = fs.statSync(logDirectory);
         if (canWrite(process.uid === appLogStat.uid, process.gid === appLogStat.gid, appLogStat.mode)){
             console.error("ERROR WRITING TO LOG FILE DIRECTORY : " + logDirectory);

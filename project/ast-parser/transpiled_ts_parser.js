@@ -9,13 +9,13 @@
 
 ///////////////// CONFIGURATION /////////////////
 
-var disableLogger = true;
+var disableLogger = false;
 if(process.env.AST_PARSER_DISABLE_LOGGING && process.env.AST_PARSER_DISABLE_LOGGING.trim() === "true") {
 	disableLogger = true;
 }
 
 loggingSettings = {
-	"logDirectory" : require("path").dirname(require.main.filename) + "/logs",
+	"logPath" : require("path").dirname(require.main.filename) + "/logs/i.txt",
 	"strategy" : "console",
 	"APP_NAME" : "ast_parser",
 	"disable": disableLogger
@@ -25,6 +25,7 @@ var fs = require("fs"),
 	babelParser = require("babylon"),
 	traverse = require("babel-traverse"),
 	logger = require('./helpers/logger')(loggingSettings),
+	fileHelpers = require("./helpers/file_helpers")({logger: logger}),
 	path = require("path"),
 	stringify = require("./helpers/json_extension"),
 	es5_visitors = require("./visitors/es5-visitors"),
@@ -67,30 +68,7 @@ if(arguments && arguments.length >= 5) {
 }
 
 /////////////// PREPARATION ////////////////
-function cleanOutFile(filePath) {
-	fs.truncateSync(filePath, 0);
-	logger.info("+cleared out file: " + filePath);
-}
-
-function createFile(filePath) {
-	if(ensureDirectories(outFile)) {
-		fs.writeFileSync(outFile, "");
-		logger.info("+created ast output file: " + path.join(appDir, outFile));
-	}
-	cleanOutFile(filePath)
-}
-
-function ensureDirectories(filePath) {
-	var parentDir = path.dirname(filePath);
-	if(fs.existsSync(parentDir)) {
-		return true;
-	}
-
-	ensureDirectories(parentDir);
-	fs.mkdirSync(parentDir);
-	return true;
-}
-createFile(outFile)
+fileHelpers.createFile(outFile)
 
 /////////////// EXECUTE ////////////////
 
