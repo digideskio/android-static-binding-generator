@@ -10,7 +10,6 @@ import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +80,7 @@ public class Generator {
 				Map<String, List<Method>> api = getPublicApi(clazz, classes);
 
 				boolean hasSpecifiedName = !r.getFilename().isEmpty();
-				String packageName = hasSpecifiedName ? getBaseDir(r.getFilename()) : DEFAULT_PACKAGE_NAME;
+				String packageName = hasSpecifiedName ? getBaseDir(r.getFilename()) : (DEFAULT_PACKAGE_NAME + "." + clazz.getPackageName());
 				String baseDirPath = packageName.replace('.', '/');
 				
 				File baseDir = new File(outputDir, baseDirPath);
@@ -95,7 +94,7 @@ public class Generator {
 					name += r.getSuffix();
 				}
 				
-				File outputFile = new File(baseDir, name + JAVA_EXT);
+				File outputFile = new File(baseDir,  name + JAVA_EXT);
 				writeFile(r, packageName, name, clazz, api, outputFile);
 			}
 		}
