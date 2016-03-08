@@ -111,7 +111,7 @@ public class Generator {
 			}
 			collectInterfaceMethods(clazz, methods, classes);
 			for (Method m: methods) {
-				if (!m.isSynthetic() && (m.isPublic() || m.isProtected())) {
+				if (!m.isSynthetic() && (m.isPublic() || m.isProtected()) && !m.isStatic()) {
 					String name = m.getName();
 					
 					List<Method> methodGroup;
@@ -203,7 +203,14 @@ public class Generator {
 			w.write(extendKeyword);
 			w.write(clazz.getClassName().replace('$', '.'));
 			w.writeln(" {");
-			writeConstructors(clazz, name, w);
+			boolean hasInitMethod = false;
+			for (String m: data.getMethods()) {
+				hasInitMethod = m.equals("init");
+				if (hasInitMethod) {
+					break;
+				}
+			}
+			writeConstructors(clazz, name, hasInitMethod,  w);
 			for (String methodName: data.getMethods()) {
 				if (api.containsKey(methodName)) {
 					List<Method> methodGroup = api.get(methodName);
@@ -219,7 +226,7 @@ public class Generator {
 						w.write(" ");
 						writeThrowsClause(m, w);
 						w.writeln(" {");
-						writeMethodBody(m, w);
+						writeMethodBody(m, false, w);
 						w.writeln("\t}");
 						w.writeln();
 					}
@@ -256,7 +263,7 @@ public class Generator {
 	}
 	
 	
-	private void writeConstructors(JavaClass clazz, String classname, Writer w) {
+	private void writeConstructors(JavaClass clazz, String classname, boolean hasInitMethod, Writer w) {
 		boolean isInterface = clazz.isInterface();
 		if (isInterface) {
 			w.write("\tpublic ");
@@ -273,38 +280,44 @@ public class Generator {
 				}
 			}
 			for (Method c: ctors) {
-				String visibility =  c.isPublic() ? "public" : "protected";
-				w.write("\t");
-				w.write(visibility);
-				w.write(" ");
-				w.write(classname);
-				writeMethodSignature(c, w);
-				w.writeln("{");
-				w.write("\t\tsuper(");
-				Type[] ctorArgs = c.getArgumentTypes();
-				for (int i=0; i<ctorArgs.length; i++) {
-					if (i > 0) {
-						w.write(", ");
+				if (c.isPublic() || c.isProtected()) {
+					String visibility =  c.isPublic() ? "public" : "protected";
+					w.write("\t");
+					w.write(visibility);
+					w.write(" ");
+					w.write(classname);
+					writeMethodSignature(c, w);
+					w.writeln("{");
+					w.write("\t\tsuper(");
+					Type[] ctorArgs = c.getArgumentTypes();
+					for (int i=0; i<ctorArgs.length; i++) {
+						if (i > 0) {
+							w.write(", ");
+						}
+						w.write("param_");
+						w.write(i);
 					}
-					w.write("param_");
-					w.write(i);
+					w.writeln(");");
+					w.writeln("\t\tcom.tns.Platform.initInstance(this);");
+					if (hasInitMethod) {
+						writeMethodBody(c, true, w);
+					}
+					w.writeln("\t}");
+					w.writeln();
 				}
-				w.writeln(");");
-				w.writeln("\t\tcom.tns.Platform.initInstance(this);");
-				w.writeln("\t}");
-				w.writeln();
 			}
 		}
 	}
 	
-	private void writeMethodBody(Method m, Writer w) {
+	private void writeMethodBody(Method m, boolean isConstructor, Writer w) {
 		Type[] args = m.getArgumentTypes();
+		int argLen = args.length + (isConstructor ? 1 : 0);
 		w.write("\t\tjava.lang.Object[] args = ");
-		if (args.length == 0) {
+		if (argLen == 0) {
 			w.writeln("null;");
 		} else {
 			w.write("new java.lang.Object[");
-			w.write(args.length);
+			w.write(argLen);
 			w.writeln("];");
 		}
 		for (int i=0; i<args.length; i++) {
@@ -312,6 +325,14 @@ public class Generator {
 			w.write(i);
 			w.write("] = param_");
 			w.write(i);
+			w.writeln(";");
+		}
+		String name = isConstructor ? "init" : m.getName();
+		if (name.equals("init")) {
+			w.write("\t\targs[");
+			w.write(argLen - 1);
+			w.write("] = ");
+			w.write(isConstructor);
 			w.writeln(";");
 		}
 		w.write("\t\t");
@@ -322,7 +343,7 @@ public class Generator {
 			w.write(')');
 		}
 		w.write("com.tns.Platform.callJSMethod(this, \"");
-		w.write(m.getName());
+		w.write(name);
 		w.write("\", ");
 		writeType(ret, w);
 		w.writeln(".class, args);");

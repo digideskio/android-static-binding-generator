@@ -19,6 +19,10 @@ public class Writer {
 		sb.append(i);
 	}
 	
+	public void write(boolean b) {
+		sb.append(b);
+	}
+	
 	public void write(String text) {
 		sb.append(text);
 	}
