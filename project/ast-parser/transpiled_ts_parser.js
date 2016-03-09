@@ -195,6 +195,7 @@ var visitAst = function (data, err) {
 					logger: logger,
 					extendDecoratorName: extendDecoratorName,
 					filePath: data.filePath.substring(inputDir.length + 1, (data.filePath.length - 3)),
+					fullPathName: data.filePath.substring(inputDir.length + 1).replace(/[\\]/g, "/"),
 					interfaceNames: interfaceNames
 				};
 				es5_visitors.es5Visitor(path, decoratorConfig);

@@ -113,7 +113,7 @@ var es5_visitors = (function () {
 
 		var isDecorated = traverseToFindDecorate(path, config, extendClass, overriddenMethodNames);
 		if(!isDecorated) {
-			var lineToWrite = _generateLineToWrite("", extendClass, overriddenMethodNames, TYPESCRIPT_EXTEND_STRING + declaredClassName);
+			var lineToWrite = _generateLineToWrite("", extendClass, overriddenMethodNames, TYPESCRIPT_EXTEND_STRING + declaredClassName, "");
 			if(config.logger) {
 				config.logger.info(lineToWrite)
 			}
@@ -198,7 +198,7 @@ var es5_visitors = (function () {
 			var isCorrectInterfaceName = _testClassName(arg0.value);
 			var overriddenInterfaceMethods = _getOverriddenMethods(arg1, config);
 			var extendInfo = 	FILE_SEPARATOR + config.filePath + LINE_SEPARATOR + path.node.loc.start.line + COLUMN_SEPARATOR + (path.node.loc.start.column + columnOffset) + DECLARED_CLASS_SEPARATOR + (isCorrectInterfaceName ? arg0.value : "");
-			var lineToWrite = _generateLineToWrite("", currentInterface, overriddenInterfaceMethods.join(","), extendInfo);
+			var lineToWrite = _generateLineToWrite("", currentInterface, overriddenInterfaceMethods.join(","), extendInfo, "");
 			if(config.logger) {
 				config.logger.info(lineToWrite)
 			}
@@ -217,7 +217,7 @@ var es5_visitors = (function () {
 
 		var classNameFromDecorator = _getDecoratorArgument(path, config, customDecoratorName);
 
-		var lineToWrite = _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames, "");
+		var lineToWrite = _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames, "", config.fullPathName);
 		if(config.logger) {
 			config.logger.info(lineToWrite)
 		}
@@ -289,7 +289,7 @@ var es5_visitors = (function () {
 				if(config.logger) {
 					config.logger.info(lineToWrite)
 				}
-				lineToWrite =  _generateLineToWrite(isCorrectExtendClassName ? className : "", extendClass.reverse().join("."), overriddenMethodNames, "");
+				lineToWrite =  _generateLineToWrite(isCorrectExtendClassName ? className : "", extendClass.reverse().join("."), overriddenMethodNames, "", config.fullPathName);
 				customExtendsArr.push(lineToWrite)
 				return;
 			}
@@ -298,7 +298,7 @@ var es5_visitors = (function () {
 				config.logger.info(lineToWrite)
 			}
 			var extendInfo = FILE_SEPARATOR + config.filePath + LINE_SEPARATOR + path.node.property.loc.start.line + COLUMN_SEPARATOR + (path.node.property.loc.start.column + columnOffset) + DECLARED_CLASS_SEPARATOR + className;
-			lineToWrite =  _generateLineToWrite(isCorrectExtendClassName ? className : "", extendClass.reverse().join("."), overriddenMethodNames, extendInfo);
+			lineToWrite =  _generateLineToWrite(isCorrectExtendClassName ? className : "", extendClass.reverse().join("."), overriddenMethodNames, extendInfo, "");
 			normalExtendsArr.push(lineToWrite)
 		}
 		else {
@@ -447,8 +447,8 @@ var es5_visitors = (function () {
 		return false;
 	}
 
-	function _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames, extendInfo) {
-		var lineToWrite = extendClass + "*" + extendInfo.replace(/[\\-]/g, "_") + "*" + overriddenMethodNames + "*" + classNameFromDecorator;
+	function _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames, extendInfo, filePath) {
+		var lineToWrite = extendClass + "*" + extendInfo.replace(/[\\-]/g, "_") + "*" + overriddenMethodNames + "*" + classNameFromDecorator + "*" + filePath;
 		return lineToWrite;
 	}
 
