@@ -2,12 +2,13 @@ package org.nativescript.staticbindings;
 
 public class DataRow {
 	private final String DELIMITER = "\\*";
-	private final int ELEMENT_NUMBER = 4;
+	private final int ELEMENT_NUMBER = 5;
 	private final String row;
 	private String baseClassname;
 	private String suffix;
 	private String[] methods;
 	private String filename;
+	private String jsFilename;
 	
 	public DataRow(String row) {
 		this.row = row;
@@ -34,6 +35,10 @@ public class DataRow {
 		return filename;
 	}
 	
+	public String getJsFilename() {
+		return jsFilename;
+	}
+	
 	private void parse(String row) {
 		String[] data = row.split(DELIMITER, -1);
 		if (data.length != ELEMENT_NUMBER) {
@@ -43,5 +48,6 @@ public class DataRow {
 		suffix = data[1];
 		methods = data[2].split(",");
 		filename = data[3];
+		jsFilename = data[4];
 	}
 }
