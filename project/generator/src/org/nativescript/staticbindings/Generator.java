@@ -87,10 +87,12 @@ public class Generator {
 				if (!baseDir.exists()) {
 					baseDir.mkdirs();
 				}
-				
-				String simpleName = getSimpleClassname(classname);
-				String name = simpleName;
-				if (!hasSpecifiedName) {
+
+				String name;
+				if (hasSpecifiedName) {
+					name = getSimpleClassname(r.getFilename());
+				} else {
+					name = getSimpleClassname(classname);
 					name += r.getSuffix();
 				}
 				
@@ -197,6 +199,10 @@ public class Generator {
 			
 			w.writeln("package " + packageName + ";");
 			w.writeln();
+			boolean hasSpecifiedName = !data.getFilename().isEmpty();
+			if (hasSpecifiedName) {
+				w.writeln("@com.tns.JavaScriptImplementation(javaScriptFile = \"" + data.getJsFilename() + "\")");
+			}
 			w.write("public class " + name);
 			boolean isInterface = clazz.isInterface();
 			String extendKeyword = isInterface ? " implements " : " extends ";
