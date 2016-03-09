@@ -97,7 +97,7 @@ public class Generator {
 				}
 				
 				File outputFile = new File(baseDir,  name + JAVA_EXT);
-				writeFile(r, packageName, name, clazz, api, outputFile);
+				writeFile(r, packageName, name, clazz, api, classes, outputFile);
 			}
 		}
 	}
@@ -190,7 +190,7 @@ public class Generator {
 		return name;
 	}
 	
-	private void writeFile(DataRow data, String packageName, String name, JavaClass clazz, Map<String, List<Method>> api, File outputFile) throws IOException {
+	private void writeFile(DataRow data, String packageName, String name, JavaClass clazz, Map<String, List<Method>> api, Map<String, JavaClass> classes, File outputFile) throws IOException {
 		PrintStream ps = null;
 		Writer w = new Writer();
 		
@@ -216,7 +216,9 @@ public class Generator {
 					break;
 				}
 			}
-			writeConstructors(clazz, name, hasInitMethod,  w);
+			boolean isApplicationClass = isApplicationClass(clazz, classes);
+			boolean hasInitMethod2 = isApplicationClass ? false : hasInitMethod;
+			writeConstructors(clazz, name, hasInitMethod2, isApplicationClass, w);
 			for (String methodName: data.getMethods()) {
 				if (api.containsKey(methodName)) {
 					List<Method> methodGroup = api.get(methodName);
@@ -237,6 +239,9 @@ public class Generator {
 						w.writeln();
 					}
 				}
+			}
+			if (isApplicationClass) {
+				writeApplicationClassInitialization(hasInitMethod, w);
 			}
 			w.writeln("}");
 			
@@ -269,7 +274,7 @@ public class Generator {
 	}
 	
 	
-	private void writeConstructors(JavaClass clazz, String classname, boolean hasInitMethod, Writer w) {
+	private void writeConstructors(JavaClass clazz, String classname, boolean hasInitMethod, boolean isApplicationClass, Writer w) {
 		boolean isInterface = clazz.isInterface();
 		if (isInterface) {
 			w.write("\tpublic ");
@@ -304,7 +309,9 @@ public class Generator {
 						w.write(i);
 					}
 					w.writeln(");");
-					w.writeln("\t\tcom.tns.Platform.initInstance(this);");
+					if (!isApplicationClass) {
+						w.writeln("\t\tcom.tns.Platform.initInstance(this);");
+					}
 					if (hasInitMethod) {
 						writeMethodBody(c, true, w);
 					}
@@ -360,6 +367,18 @@ public class Generator {
 		w.write(type);
 	}
 	
+	private void writeApplicationClassInitialization(boolean hasInitMethod, Writer w) {
+		w.writeln("\tprotected void attachBaseContext(android.content.Context base) {");
+		w.writeln("\t\tsuper.attachBaseContext(base);");
+		w.writeln("\t\tnew RuntimeHelper(this).initRuntime();");
+		w.writeln("\t\tPlatform.initInstance(this);");
+		if (hasInitMethod) {
+			w.writeln("\t\tjava.lang.Object[] params = null;");
+			w.writeln("\t\tcom.tns.Platform.callJSMethod(this, \"init\", void.class, args);");
+		}
+		w.writeln("\t}");
+	}
+	
 	private void collectInterfaceMethods(JavaClass clazz, List<Method> methods, Map<String, JavaClass> classes) {
 		JavaClass currentClass = clazz;
 		while (true) {
@@ -388,5 +407,29 @@ public class Generator {
 				currentClass = classes.get(currentClass.getSuperclassName());
 			}
 		}
+	}
+	
+	private boolean isApplicationClass(JavaClass clazz, Map<String, JavaClass> classes) {
+		boolean isApplicationClass = false;
+		
+		String applicationClassname = "android.app.Application";
+		
+		JavaClass currentClass = clazz;
+		while (true) {
+			String currentClassname = currentClass.getClassName();
+			
+			isApplicationClass = currentClassname.equals(applicationClassname); 
+			if (isApplicationClass) {
+				break;
+			}
+			
+			if (currentClassname.endsWith("java.lang.Object")) {
+				break;
+			}
+			
+			currentClass = classes.get(currentClass.getSuperclassName());
+		}
+		
+		return isApplicationClass;
 	}
 }
