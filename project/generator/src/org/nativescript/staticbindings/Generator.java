@@ -234,14 +234,11 @@ public class Generator {
 						w.write(" ");
 						writeThrowsClause(m, w);
 						w.writeln(" {");
-						writeMethodBody(m, false, w);
+						writeMethodBody(m, false, isApplicationClass, w);
 						w.writeln("\t}");
 						w.writeln();
 					}
 				}
-			}
-			if (isApplicationClass) {
-				writeApplicationClassInitialization(hasInitMethod, w);
 			}
 			w.writeln("}");
 			
@@ -313,7 +310,7 @@ public class Generator {
 						w.writeln("\t\tcom.tns.Platform.initInstance(this);");
 					}
 					if (hasInitMethod) {
-						writeMethodBody(c, true, w);
+						writeMethodBody(c, true, false, w);
 					}
 					w.writeln("\t}");
 					w.writeln();
@@ -322,7 +319,10 @@ public class Generator {
 		}
 	}
 	
-	private void writeMethodBody(Method m, boolean isConstructor, Writer w) {
+	private void writeMethodBody(Method m, boolean isConstructor, boolean isApplicationClass, Writer w) {
+		if (m.getName().equals("onCreate") && isApplicationClass) {
+			w.writeln("\t\tnew RuntimeHelper(this).initRuntime();");
+		}
 		Type[] args = m.getArgumentTypes();
 		int argLen = args.length + (isConstructor ? 1 : 0);
 		w.write("\t\tjava.lang.Object[] args = ");
@@ -365,18 +365,6 @@ public class Generator {
 	private void writeType(Type t, Writer w) {
 		String type = t.toString().replace('$', '.');
 		w.write(type);
-	}
-	
-	private void writeApplicationClassInitialization(boolean hasInitMethod, Writer w) {
-		w.writeln("\tprotected void attachBaseContext(android.content.Context base) {");
-		w.writeln("\t\tsuper.attachBaseContext(base);");
-		w.writeln("\t\tnew RuntimeHelper(this).initRuntime();");
-		w.writeln("\t\tPlatform.initInstance(this);");
-		if (hasInitMethod) {
-			w.writeln("\t\tjava.lang.Object[] params = null;");
-			w.writeln("\t\tcom.tns.Platform.callJSMethod(this, \"init\", void.class, args);");
-		}
-		w.writeln("\t}");
 	}
 	
 	private void collectInterfaceMethods(JavaClass clazz, List<Method> methods, Map<String, JavaClass> classes) {
