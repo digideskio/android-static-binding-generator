@@ -1,4 +1,4 @@
-package org.nativescript.staticbindings;
+package org.nativescript;
 
 public class DataRow {
 	private final String DELIMITER = "\\*";

@@ -1,4 +1,4 @@
-package org.nativescript.staticbindings;
+package org.nativescript;
 
 public class Writer {
 	private final StringBuilder sb;

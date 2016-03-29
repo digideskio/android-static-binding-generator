@@ -1,4 +1,4 @@
-package org.nativescript.staticbindings;
+package org.nativescript;
 
 import java.io.BufferedReader;
 import java.io.File;
