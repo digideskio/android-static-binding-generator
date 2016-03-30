@@ -1,0 +1,100 @@
+/*
+*	The android static binding generator will generate bindings for some javascript code you specify.
+*	The passed output directory will be created if necessary
+*	to run: 
+*			gradle generatebindings -PjsCodeDir=[js_code_dir] -PjarsDir=[jars_dir] -PoutDir=[out_dir]
+*/
+
+def isWinOs = System.properties['os.name'].toLowerCase().contains('windows')
+
+def isJsCodePathPassed = project.hasProperty("jsCodeDir")
+def isOutDirPassed = project.hasProperty("outDir")
+
+def bgRootDir = "$rootDir/build-tools/android-static-binding-generator"
+def astParserDir = "$bgRootDir/ast-parser"
+def interfaceNamesFilePath = "$bgRootDir/interfaces-names.txt"
+def bindingsFilePath = "$bgRootDir/bindings.txt"
+
+task generateInterfaceNamesList(type: JavaExec) {
+	outputs.upToDateWhen {
+		(new File(interfaceNamesFilePath)).exists()
+	}
+
+	doFirst {		
+		main "-jar"
+
+		//todo: for test (remove later)
+		// def ll = new LinkedList<String>();
+		// ll.add("D:/work/nativescript-cli/scratch/buildtoolstest/platforms/android/libs/nativescript.jar")
+		// ll.add("D:/tools/android_sdk/extras/android/m2repository/com/android/support/support-annotations/23.2.1/support-annotations-23.2.1.jar")
+		// ll.add("D:/tools/android_sdk/platforms/android-23/android.jar")
+		// ll.add("D:/work/nativescript-cli/scratch/buildtoolstest/platforms/android/build/intermediates/exploded-aar/com.android.support/animated-vector-drawable/23.2.1/jars/classes.jar")
+		// ll.add("D:/work/nativescript-cli/scratch/buildtoolstest/platforms/android/build/intermediates/exploded-aar/com.android.support/appcompat-v7/23.2.1/jars/classes.jar")
+		// ll.add("D:/work/nativescript-cli/scratch/buildtoolstest/platforms/android/build/intermediates/exploded-aar/com.android.support/support-v4/23.2.1/jars/classes.jar")
+		// ll.add("D:/work/nativescript-cli/scratch/buildtoolstest/platforms/android/build/intermediates/exploded-aar/com.android.support/support-v4/23.2.1/jars/libs/internal_impl-23.2.1.jar")
+		// ll.add("D:/work/nativescript-cli/scratch/buildtoolstest/platforms/android/build/intermediates/exploded-aar/com.android.support/support-vector-drawable/23.2.1/jars/classes.jar")
+		// ll.add("D:/work/nativescript-cli/scratch/buildtoolstest/platforms/android/build/intermediates/exploded-aar/widgets-release/jars/classes.jar")
+		// project.jarFiles = ll;
+		
+		def jarsArr = rootProject.jarFiles.toString().replaceAll(/[\[\]]/, "").split(", ")
+		
+		def str = new LinkedList <String> ();
+		str.add("interfacenamegenerator.jar")
+		str.addAll(jarsArr)
+
+		args str.toArray()
+	}
+}
+
+task runNpmInstallForAstParser (type: Exec) {
+	workingDir astParserDir
+
+	outputs.upToDateWhen {
+		(new File("$astParserDir/node_modules")).exists()
+	}
+
+	if(isWinOs) {
+		commandLine "cmd", "/c", "npm", "install"
+	}
+	else {
+		commandLine "npm", "install"
+	}
+}
+
+task runAstParser (type: Exec) {
+	workingDir astParserDir
+
+	outputs.files(bindingsFilePath)
+	outputs.upToDateWhen {
+		!generateInterfaceNamesList.didWork
+	}
+
+	if(isWinOs) {
+		commandLine "cmd", "/c", "node", "js_parser.js" , project.jsCodeDir, "../bindings.txt"
+	}
+	else {
+		commandLine "node", "js_parser.js", project.jsCodeDir, "../bindings.txt"
+	}
+}
+
+task generateBindings(type: JavaExec) {
+	
+	inputs.files(bindingsFilePath)
+	outputs.dir(project.outDir)
+	
+	doFirst {
+		main "-jar"
+		
+		def str = new LinkedList <String> ();
+		str.add("staticbindinggenerator.jar")
+		str.add(bindingsFilePath)
+		str.add(project.outDir)
+		str.addAll(project.jarFiles)
+		
+		args str.toArray()
+	}
+}
+
+runNpmInstallForAstParser.dependsOn(generateInterfaceNamesList)
+runAstParser.dependsOn(runNpmInstallForAstParser)
+generateBindings.dependsOn(runAstParser)

@@ -41,8 +41,8 @@ var es5_visitors = (function () {
 		if(t.isNewExpression(path)) {
 			traverseInterface(path, config);
 		}
-	// Parsed Typescript to ES5 Syntax (normal extend pattern + custom extend pattern)
-		// anchor is __extends
+	// // Parsed Typescript to ES5 Syntax (normal extend pattern + custom extend pattern)
+	// 	// anchor is __extends
 		if(t.isIdentifier(path) && path.node.name === "__extends") {
 			traverseTsExtend(path, config);
 		}
@@ -145,7 +145,8 @@ var es5_visitors = (function () {
 						if(currentDecorator.callee.name === config.extendDecoratorName) {
 							currentDecorator.callee.skipMeOnVisit = true;
 							var customDecoratorName = config.extendDecoratorName === undefined ? defaultExtendDecoratorName : config.extendDecoratorName;
-							traverseJavaProxyExtend(currentDecorator._paths[0], config, customDecoratorName,  extendClass, overriddenMethodNames);
+							
+							traverseJavaProxyExtend(currentDecorator.arguments[0].value, config, customDecoratorName,  extendClass, overriddenMethodNames);
 							return true;
 						}
 					}
@@ -215,7 +216,7 @@ var es5_visitors = (function () {
 			config.logger.info("\t+in "+customDecoratorName+" anchor");
 		}
 
-		var classNameFromDecorator = _getDecoratorArgument(path, config, customDecoratorName);
+		var classNameFromDecorator = path;//_getDecoratorArgument(path, config, customDecoratorName);
 
 		var lineToWrite = _generateLineToWrite(classNameFromDecorator, extendClass, overriddenMethodNames, "", config.fullPathName);
 		if(config.logger) {

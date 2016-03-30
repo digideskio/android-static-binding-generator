@@ -9,7 +9,7 @@
 
 ///////////////// CONFIGURATION /////////////////
 
-var disableLogger = false;
+var disableLogger = true;
 if(process.env.AST_PARSER_DISABLE_LOGGING && process.env.AST_PARSER_DISABLE_LOGGING.trim() === "true") {
 	disableLogger = true;
 }
@@ -39,7 +39,7 @@ var fs = require("fs"),
 	extendDecoratorName = "JavaProxy",
 	outFile = "out/out_parsed_typescript.txt", //default out file
 	inputDir = "input_parced_typescript", //default input folder
-	interfacesNamesFilePath = "./interfaces-names.txt", //default interace_names file path
+	interfacesNamesFilePath = "../interfaces-names.txt", //default interace_names file path
 	interfaceNames = [];
 
 //env variables
@@ -50,7 +50,7 @@ if(process.env.AST_PARSER_INPUT_DIR) {
 	inputDir = process.env.AST_PARSER_INPUT_DIR.trim();
 }
 if(process.env.AST_PARSER_INTERFACE_FILE_PATH) {
-	inputDir = process.env.AST_PARSER_INTERFACE_FILE_PATH.trim();
+	interfacesNamesFilePath = process.env.AST_PARSER_INTERFACE_FILE_PATH.trim();
 }
 
 
