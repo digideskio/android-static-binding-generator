@@ -201,14 +201,26 @@ public class Generator {
 			w.writeln();
 			boolean hasSpecifiedName = !data.getFilename().isEmpty();
 			if (hasSpecifiedName) {
-				w.writeln("@com.tns.JavaScriptImplementation(javaScriptFile = \"" + data.getJsFilename() + "\")");
+				w.writeln("@com.tns.JavaScriptImplementation(javaScriptFile = \"./" + data.getJsFilename() + "\")");
 			}
 			w.write("public class " + name);
 			boolean isInterface = clazz.isInterface();
 			String extendKeyword = isInterface ? " implements " : " extends ";
 			w.write(extendKeyword);
 			w.write(clazz.getClassName().replace('$', '.'));
+			if(!isInterface) {
+				w.write(" implements");
+				w.write(" com.tns.NativeScriptHashCodeProvider");
+			}
 			w.writeln(" {");
+
+			if(isClassApplication(clazz)) {
+				//get instance method
+				w.write("\t");
+				w.writeln("private static " + clazz.getClassName().replace('$', '.') + " thiz;");
+				w.writeln();
+			}
+
 			boolean hasInitMethod = false;
 			for (String m: data.getMethods()) {
 				hasInitMethod = m.equals("init");
@@ -240,6 +252,22 @@ public class Generator {
 					}
 				}
 			}
+
+			if(!isInterface) {
+				writeHashCodeProviderImplementationMethods(w);
+			}
+
+			if(isClassApplication(clazz)) {
+				w.write("\t");
+				w.write("public static ");
+				w.write(clazz.getClassName().replace('$', '.'));
+				w.writeln(" getInstance() {");
+				w.write("\t\t");
+				w.writeln("return thiz;");
+				w.write("\t");
+				w.writeln("}");
+			}
+
 			w.writeln("}");
 			
 			ps.append(w.getSting());
@@ -252,7 +280,34 @@ public class Generator {
 		
 		//outputFile.setLastModified(0);
 	}
-	
+
+	private boolean isClassApplication(JavaClass clazz) {
+		if(clazz.getClassName().equals("android.app.Application") ||
+				clazz.getClassName().equals("android.support.multidex.MultiDexApplication") ||
+				clazz.getClassName().equals("android.test.mock.MockApplication")) {
+			return  true;
+		}
+		return  false;
+	}
+
+	private  void writeHashCodeProviderImplementationMethods(Writer w) {
+		w.write("\t");
+		w.writeln("public boolean equals__super(java.lang.Object other) {");
+		w.write("\t\t");
+		w.writeln("return super.equals(other);");
+		w.write("\t");
+		w.writeln("}");
+		w.writeln();
+
+		w.write("\t");
+		w.writeln("public int hashCode__super() {");
+		w.write("\t\t");
+		w.writeln("return super.hashCode();");
+		w.write("\t");
+		w.writeln("}");
+		w.writeln();
+	}
+
 	private void writeMethodSignature(Method m, Writer w) {
 		w.write('(');
 		Type[] args = m.getArgumentTypes();
@@ -311,6 +366,11 @@ public class Generator {
 					}
 					if (hasInitMethod) {
 						writeMethodBody(c, true, false, w);
+					}
+					if(isClassApplication(clazz)) {
+						//get instance method
+						w.write("\t\t");
+						w.writeln("thiz = this;");
 					}
 					w.writeln("\t}");
 					w.writeln();
