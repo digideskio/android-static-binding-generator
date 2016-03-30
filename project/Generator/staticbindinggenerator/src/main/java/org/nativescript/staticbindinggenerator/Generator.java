@@ -92,7 +92,7 @@ public class Generator {
 				if (hasSpecifiedName) {
 					name = getSimpleClassname(r.getFilename());
 				} else {
-					name = getSimpleClassname(classname);
+					name = getSimpleClassname(clazz.getClassName());
 					name += r.getSuffix();
 				}
 				
@@ -186,7 +186,7 @@ public class Generator {
 	
 	private String getSimpleClassname(String classname) {
 		int idx = classname.lastIndexOf('.');
-		String name = classname.substring(idx + 1, classname.length());
+		String name = classname.substring(idx + 1, classname.length()).replace("$", "_");
 		return name;
 	}
 	
