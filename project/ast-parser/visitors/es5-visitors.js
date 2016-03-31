@@ -4,11 +4,11 @@ var es5_visitors = (function () {
 
 		defaultExtendDecoratorName = "JavaProxy",
 		columnOffset = 1,
-		TYPESCRIPT_EXTEND_STRING = "frnal_ts_helpers_l47_c38";
 		FILE_SEPARATOR = "_f",
 		LINE_SEPARATOR = "_l",
 		COLUMN_SEPARATOR = "_c",
 		DECLARED_CLASS_SEPARATOR = "__",
+		TYPESCRIPT_EXTEND_STRING = FILE_SEPARATOR + "rnal_ts_helpers_l47_c38";
 		customExtendsArr = [],
 		normalExtendsArr = [],
 		interfacesArr = [];
