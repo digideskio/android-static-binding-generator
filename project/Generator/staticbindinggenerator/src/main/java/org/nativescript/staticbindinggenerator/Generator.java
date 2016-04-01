@@ -11,9 +11,11 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
 
@@ -189,6 +191,11 @@ public class Generator {
 		String name = classname.substring(idx + 1, classname.length()).replace("$", "_");
 		return name;
 	}
+
+    private String getFullMethodSignature(Method m) {
+        String sig = m.getName() + m.getSignature();
+        return sig;
+    }
 	
 	private void writeFile(DataRow data, String packageName, String name, JavaClass clazz, Map<String, List<Method>> api, Map<String, JavaClass> classes, File outputFile) throws IOException {
 		PrintStream ps = null;
@@ -231,28 +238,44 @@ public class Generator {
 			boolean isApplicationClass = isApplicationClass(clazz, classes);
 			boolean hasInitMethod2 = isApplicationClass ? false : hasInitMethod;
 			writeConstructors(clazz, name, hasInitMethod2, isApplicationClass, w);
-			for (String methodName: data.getMethods()) {
-				if (api.containsKey(methodName)) {
-					List<Method> methodGroup = api.get(methodName);
-					for (Method m: methodGroup) {
-						String visibility = m.isPublic() ? "public" : "protected";
-						w.write("\t");
-						w.write(visibility);
-						w.write(" ");
-						writeType(m.getReturnType(), w);
-						w.write(" ");
-						w.write(m.getName());
-						writeMethodSignature(m, w);
-						w.write(" ");
-						writeThrowsClause(m, w);
-						w.writeln(" {");
-						writeMethodBody(m, false, isApplicationClass, w);
-						w.writeln("\t}");
-						w.writeln();
+
+			if (isInterface) {
+                Set<String> objectMethods = new HashSet<String>();
+                for (Method objMethod: classes.get("java.lang.Object").getMethods()) {
+                    if (!objMethod.isStatic() && (objMethod.isPublic() || objMethod.isProtected())) {
+                        String sig = getFullMethodSignature(objMethod);
+                        objectMethods.add(sig);
+                    }
+                }
+                Set<Method> notImplementedObjectMethods = new HashSet<Method>();
+                Method[] ifaceMethods = clazz.getMethods();
+                Set<String> methodOverrides = new HashSet<String>();
+                for (String methodName: data.getMethods()) {
+                    methodOverrides.add(methodName);
+                }
+                for (Method ifaceMethod: ifaceMethods) {
+                    if (!ifaceMethod.isStatic())  {
+                        String sig = getFullMethodSignature(ifaceMethod);
+                        if (objectMethods.contains(sig) && !methodOverrides.contains(ifaceMethod.getName())) {
+                            notImplementedObjectMethods.add(ifaceMethod);
+                        }
+                    }
+                }
+                for (Method m: ifaceMethods) {
+                    if (!notImplementedObjectMethods.contains(m)) {
+                        writeMethodBody(m, w, isApplicationClass);
+                    }
+                }
+			} else {
+				for (String methodName : data.getMethods()) {
+					if (api.containsKey(methodName)) {
+						List<Method> methodGroup = api.get(methodName);
+						for (Method m : methodGroup) {
+                            writeMethodBody(m, w, isApplicationClass);
+						}
 					}
 				}
 			}
-
 			if(!isInterface) {
 				writeHashCodeProviderImplementationMethods(w);
 			}
@@ -290,7 +313,24 @@ public class Generator {
 		return  false;
 	}
 
-	private  void writeHashCodeProviderImplementationMethods(Writer w) {
+    private void writeMethodBody(Method m, Writer w, boolean isApplicationClass) {
+        String visibility = m.isPublic() ? "public" : "protected";
+        w.write("\t");
+        w.write(visibility);
+        w.write(" ");
+        writeType(m.getReturnType(), w);
+        w.write(" ");
+        w.write(m.getName());
+        writeMethodSignature(m, w);
+        w.write(" ");
+        writeThrowsClause(m, w);
+        w.writeln(" {");
+        writeMethodBody(m, false, isApplicationClass, w);
+        w.writeln("\t}");
+        w.writeln();
+    }
+
+    private  void writeHashCodeProviderImplementationMethods(Writer w) {
 		w.write("\t");
 		w.writeln("public boolean equals__super(java.lang.Object other) {");
 		w.write("\t\t");
