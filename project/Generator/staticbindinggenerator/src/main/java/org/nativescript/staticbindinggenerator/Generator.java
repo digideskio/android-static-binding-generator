@@ -372,7 +372,7 @@ public class Generator {
 			w.write("\tpublic ");
 			w.write(classname);
 			w.writeln("() {");
-			w.writeln("\t\tcom.tns.Platform.initInstance(this);");
+			w.writeln("\t\tcom.tns.Runtime.initInstance(this);");
 			w.writeln("\t}");
 			w.writeln();
 		} else {
@@ -402,7 +402,7 @@ public class Generator {
 					}
 					w.writeln(");");
 					if (!isApplicationClass) {
-						w.writeln("\t\tcom.tns.Platform.initInstance(this);");
+						w.writeln("\t\tcom.tns.Runtime.initInstance(this);");
 					}
 					if (hasInitMethod) {
 						writeMethodBody(c, true, false, w);
@@ -455,7 +455,7 @@ public class Generator {
 			writeType(ret, w);
 			w.write(')');
 		}
-		w.write("com.tns.Platform.callJSMethod(this, \"");
+		w.write("com.tns.Runtime.callJSMethod(this, \"");
 		w.write(name);
 		w.write("\", ");
 		writeType(ret, w);
