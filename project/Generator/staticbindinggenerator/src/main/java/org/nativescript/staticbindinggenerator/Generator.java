@@ -301,7 +301,7 @@ public class Generator {
 			}
 		}
 		
-		outputFile.setLastModified(0);
+		//outputFile.setLastModified(0);
 	}
 
 	private boolean isClassApplication(JavaClass clazz) {
