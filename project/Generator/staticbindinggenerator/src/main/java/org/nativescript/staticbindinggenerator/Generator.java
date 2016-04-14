@@ -97,11 +97,22 @@ public class Generator {
 					name = getSimpleClassname(clazz.getClassName());
 					name += r.getSuffix();
 				}
-				
-				File outputFile = new File(baseDir,  name + JAVA_EXT);
-				writeFile(r, packageName, name, clazz, api, classes, outputFile);
+
+				String normalizedName = getNormalizedName(name);
+				File outputFile = new File(baseDir,  normalizedName + JAVA_EXT);
+				writeFile(r, packageName, normalizedName, clazz, api, classes, outputFile);
 			}
 		}
+	}
+
+	private String getNormalizedName(String filename) {
+		StringBuilder sb = new StringBuilder(filename.length());
+		for (char ch: filename.toCharArray()) {
+			char c = Character.isJavaIdentifierPart(ch) ? ch : '_';
+			sb.append(c);
+		}
+		String name = sb.toString();
+		return name;
 	}
 	
 	private Map<String, List<Method>> getPublicApi(JavaClass clazz, Map<String, JavaClass> classes) {
