@@ -433,6 +433,10 @@ public class Generator {
 	private void writeMethodBody(Method m, boolean isConstructor, boolean isApplicationClass, Writer w) {
 		if (m.getName().equals("onCreate") && isApplicationClass) {
 			w.writeln("\t\tnew RuntimeHelper(this).initRuntime();");
+			w.writeln("\t\tif (!Runtime.isInitialized()) {");
+			w.writeln("\t\t\tsuper.onCreate();");
+			w.writeln("\t\t\treturn;");
+			w.writeln("\t\t}");
 		}
 		Type[] args = m.getArgumentTypes();
 		int argLen = args.length + (isConstructor ? 1 : 0);
