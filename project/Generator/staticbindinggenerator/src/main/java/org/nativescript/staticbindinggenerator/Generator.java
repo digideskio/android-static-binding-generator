@@ -433,9 +433,26 @@ public class Generator {
 	private void writeMethodBody(Method m, boolean isConstructor, boolean isApplicationClass, Writer w) {
 		if (m.getName().equals("onCreate") && isApplicationClass) {
 			w.writeln("\t\tnew RuntimeHelper(this).initRuntime();");
+		}
+		if (isApplicationClass) {
 			w.writeln("\t\tif (!Runtime.isInitialized()) {");
-			w.writeln("\t\t\tsuper.onCreate();");
-			w.writeln("\t\t\treturn;");
+			boolean isVoid = m.getReturnType().equals(Type.VOID);
+			w.write("\t\t\t");
+			if (!isVoid) {
+				w.write("return ");
+			}
+			w.write("super." + m.getName() + "(");
+			int paramCount = m.getArgumentTypes().length;
+			for (int i=0; i<paramCount; i++) {
+				if (i > 0) {
+					w.write(", ");
+				}
+				w.write("param_" + i);
+			}
+			w.writeln(");");
+			if (isVoid) {
+				w.writeln("\t\t\treturn;");
+			}
 			w.writeln("\t\t}");
 		}
 		Type[] args = m.getArgumentTypes();
