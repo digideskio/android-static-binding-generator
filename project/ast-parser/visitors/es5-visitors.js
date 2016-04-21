@@ -99,7 +99,13 @@ var es5_visitors = (function () {
 	function traverseTsExtend(path, config) {
 
 		//this is the information for a normal extend
-		var extendClass = _getArgumentFromNodeAsString(path, 5, config)
+		var extendClass;
+		try {
+			extendClass = _getArgumentFromNodeAsString(path, 5, config)
+		} catch (e) {
+			config.logger.info(e.message)
+			return;
+		}
 		var overriddenMethodNames = _getOverriddenMethodsTypescript(path, 3)
 		var extendParent = _getParrent(path, 1, config);
 		var declaredClassName = "";
@@ -260,6 +266,8 @@ var es5_visitors = (function () {
 					}
 				}
 				else {
+					// don't throw here, because there can be a valid js extend that has nothing to do with NS
+					return;
 					throw {
 						message: "Not enough or too many arguments passed(" + extendArguments.length + ") when trying to extend class in file: " + config.filePath,
 						errCode: 1
@@ -267,6 +275,8 @@ var es5_visitors = (function () {
 				}
 			}
 			else {
+				// don't throw here, because there can be a valid js extend that has nothing to do with NS
+				return;
 				throw {
 					message: "You need to call the extend with parameters. Example: '...extend(\"a.b.C\", {...overrides...})') in file: " + config.filePath,
 					errCode: 1
@@ -303,6 +313,8 @@ var es5_visitors = (function () {
 			normalExtendsArr.push(lineToWrite)
 		}
 		else {
+				// don't throw here, because there can be a valid js extend that has nothing to do with NS
+				return;
 				throw {
 					message: "You need to call the extend '...extend(\"extend_name\", {...overrides...})'), file: " + config.filePath,
 					errCode: 1
@@ -356,7 +368,7 @@ var es5_visitors = (function () {
 			}
 			else {
 				throw {
-					message: "Node type is not a call expression. File" + config.filePath,
+					message: "Node type is not a call expression. File=" + config.filePath  + " line=" + path.node.loc.start.line,
 					errCode: 1
 				}
 			}
