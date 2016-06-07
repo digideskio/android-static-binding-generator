@@ -240,7 +240,8 @@ public class Generator {
 			}
 
 			boolean hasInitMethod = false;
-			for (String m: data.getMethods()) {
+			String[] methods = data.getMethods();
+			for (String m: methods) {
 				hasInitMethod = m.equals("init");
 				if (hasInitMethod) {
 					break;
@@ -259,7 +260,28 @@ public class Generator {
                     }
                 }
                 Set<Method> notImplementedObjectMethods = new HashSet<Method>();
-                Method[] ifaceMethods = clazz.getMethods();
+				Method[] currentIfaceMethods = clazz.getMethods();
+				ArrayList<Method> ifaceMethods = new ArrayList<Method>();
+				for (Method m: currentIfaceMethods) {
+					ifaceMethods.add(m);
+				}
+
+				ArrayDeque<String> interfaceNames = new ArrayDeque<String>();
+				for (String iname: clazz.getInterfaceNames()) {
+					interfaceNames.add(iname);
+				}
+				while (!interfaceNames.isEmpty()) {
+					String iname = interfaceNames.pollFirst();
+					JavaClass iface = classes.get(iname.replace('$', '.'));
+					for (String iname2: iface.getInterfaceNames()) {
+						interfaceNames.add(iname2.replace('$', '.'));
+					}
+					Method[] ims = iface.getMethods();
+					for (Method m: ims) {
+						ifaceMethods.add(m);
+					}
+				}
+
                 Set<String> methodOverrides = new HashSet<String>();
                 for (String methodName: data.getMethods()) {
                     methodOverrides.add(methodName);
