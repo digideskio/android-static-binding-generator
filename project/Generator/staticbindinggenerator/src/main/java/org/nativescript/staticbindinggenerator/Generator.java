@@ -142,6 +142,7 @@ public class Generator {
                 }
             }
         }
+
         return bindings.toArray(new Binding[bindings.size()]);
     }
 
