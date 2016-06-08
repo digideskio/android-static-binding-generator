@@ -1,1 +1,7 @@
 node_modules
+project/Generator/.idea
+project/Generator/staticbindinggenerator/.idea
+project/Generator/staticbindinggenerator/gradle
+project/Generator/staticbindinggenerator/gradlew
+project/Generator/staticbindinggenerator/gradlew.bat
+project/Generator/staticbindinggenerator/local.properties
