@@ -41,7 +41,7 @@ var fs = require("fs"),
 	interfacesNamesFilePath = "../interfaces-names.txt", //default interace_names file path
 	interfaceNames = [],
 	rootTraversed = false,
-	explicitTraversalKey = "sbgTraverseChildrenDirs";
+	explicitTraversalKey = "recursive-static-bindings";
 
 
 //env variables
@@ -106,13 +106,10 @@ function traverseDirectory(dir, traverseExplicitly) {
 					var fullPJsonPath = path.join(dir, "package.json");
 					var pjson = require(fullPJsonPath);
 					if (!pjson.nativescript) {
-						// if (pjson.nativescript.sbgShouldNotVisit && pjson.nativescript.platforms) {
-						// 	return;
-						// }
 						logger.info("Skipping traversal of folder " + dir);
 						return;
 					} else {
-						if(pjson.nativescript.sbgTraverseChildrenDirs) {
+						if(pjson.nativescript[explicitTraversalKey]) {
 							logger.info("Folder will be traversed completely: " + dir);
 							traverseExplicitly = true;
 						}
