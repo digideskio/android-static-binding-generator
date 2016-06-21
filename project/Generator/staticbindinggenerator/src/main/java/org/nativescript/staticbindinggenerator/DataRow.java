@@ -9,7 +9,7 @@ public class DataRow {
 	private String[] methods;
 	private String filename;
 	private String jsFilename;
-	
+
 	public DataRow(String row) {
 		this.row = row;
 		parse(this.row);

@@ -35,6 +35,11 @@ public class Writer {
 		write(text);
 		appendLineEnding();
 	}
+
+	@Override
+	public String toString() {
+		return sb.toString();
+	}
 	
 	private void appendLineEnding() {
 		write("\n");

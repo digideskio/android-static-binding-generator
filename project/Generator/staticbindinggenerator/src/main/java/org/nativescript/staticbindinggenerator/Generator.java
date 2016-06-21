@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -30,30 +29,71 @@ public class Generator {
 	private static final String CLASS_EXT = ".class";
 	
 	private static final String DEFAULT_PACKAGE_NAME = "com.tns.gen";
-	
-	public static void main(String[] args) {
-		try {
-			new Generator().go(args);
-		} catch (Exception e) {
-			e.printStackTrace();
+
+    private final String outputDir;
+    private final String[] libs;
+    private final Map<String, JavaClass> classes;
+
+    public Generator(String outputDir, String[] libs) throws IOException {
+		this(outputDir, libs, false);
+    }
+
+	public Generator(String outputDir, String[] libs, boolean throwOnError) throws IOException {
+		this.outputDir = outputDir;
+		this.libs = libs;
+		this.classes = readClasses(libs, throwOnError);
+	}
+
+
+	public void writeBindings(String filename) throws IOException {
+		Binding[] bindings = generateBindings(filename);
+
+		for (Binding b: bindings) {
+			try (PrintStream ps = new PrintStream(b.getFile())) {
+				ps.append(b.getContent());
+			}
 		}
 	}
-	
-	public void go(String[] args) throws IOException {
-		if (args.length < 3) {
-			throw new IllegalArgumentException("Expects at least three arguments");
-		}
-		String filename = args[0];
-		String outputDir = args[1];
-		String[] libs = Arrays.copyOfRange(args, 2, args.length);
-		
+
+	public Binding[] generateBindings(String filename) throws IOException {
 		List<DataRow> rows = getRows(filename);
 		
-		Map<String, JavaClass> classes = readClasses(libs);
-		
-		processRows(rows, outputDir, classes);
+		Binding[] generatedFiles = processRows(rows);
+
+		return generatedFiles;
 	}
-	
+
+    public Binding generateBinding(DataRow dataRow) {
+        JavaClass clazz = classes.get(dataRow.getBaseClassname());
+
+        boolean hasSpecifiedName = !dataRow.getFilename().isEmpty();
+        String packageName = hasSpecifiedName ? getBaseDir(dataRow.getFilename()) : (DEFAULT_PACKAGE_NAME + "." + clazz.getPackageName());
+        String baseDirPath = packageName.replace('.', '/');
+
+        File baseDir = new File(outputDir, baseDirPath);
+        if (!baseDir.exists()) {
+            boolean success = baseDir.mkdirs();
+        }
+
+        String name;
+        if (hasSpecifiedName) {
+            name = getSimpleClassname(dataRow.getFilename());
+        } else {
+            name = getSimpleClassname(clazz.getClassName());
+            name += dataRow.getSuffix();
+        }
+
+        String normalizedName = getNormalizedName(name);
+
+        Writer w = new Writer();
+
+        writeBinding(w, dataRow, clazz, packageName, name);
+
+        String classname = dataRow.getFilename();
+
+        return new Binding(new File(baseDir, normalizedName + JAVA_EXT), w.toString(), classname);
+    }
+
 	private List<DataRow> getRows(String filename) throws IOException {
 		List<DataRow> rows = new ArrayList<DataRow>();
 		BufferedReader br = null;
@@ -72,37 +112,17 @@ public class Generator {
 		return rows;
 	}
 	
-	private void processRows(List<DataRow> rows, String outputDir, Map<String, JavaClass> classes) throws IOException {
-		for (DataRow r: rows) {
-			String classname = r.getBaseClassname();
+	private Binding[] processRows(List<DataRow> rows) throws IOException {
+		ArrayList<Binding> bindings = new ArrayList<>();
+		for (DataRow dataRow: rows) {
+			String classname = dataRow.getBaseClassname();
 			boolean isJavaExtend = classes.containsKey(classname);
 			if (isJavaExtend) {
-				JavaClass clazz = classes.get(classname);
-
-				Map<String, List<Method>> api = getPublicApi(clazz, classes);
-
-				boolean hasSpecifiedName = !r.getFilename().isEmpty();
-				String packageName = hasSpecifiedName ? getBaseDir(r.getFilename()) : (DEFAULT_PACKAGE_NAME + "." + clazz.getPackageName());
-				String baseDirPath = packageName.replace('.', '/');
-				
-				File baseDir = new File(outputDir, baseDirPath);
-				if (!baseDir.exists()) {
-					baseDir.mkdirs();
-				}
-
-				String name;
-				if (hasSpecifiedName) {
-					name = getSimpleClassname(r.getFilename());
-				} else {
-					name = getSimpleClassname(clazz.getClassName());
-					name += r.getSuffix();
-				}
-
-				String normalizedName = getNormalizedName(name);
-				File outputFile = new File(baseDir,  normalizedName + JAVA_EXT);
-				writeFile(r, packageName, normalizedName, clazz, api, classes, outputFile);
+				Binding binding = generateBinding(dataRow);
+				bindings.add(binding);
 			}
 		}
+		return bindings.toArray(new Binding[bindings.size()]);
 	}
 
 	private String getNormalizedName(String filename) {
@@ -115,7 +135,7 @@ public class Generator {
 		return name;
 	}
 	
-	private Map<String, List<Method>> getPublicApi(JavaClass clazz, Map<String, JavaClass> classes) {
+	private Map<String, List<Method>> getPublicApi(JavaClass clazz) {
 		Map<String, List<Method>> api = new HashMap<String, List<Method>>();
 		JavaClass currentClass = clazz;
 		while (true) {
@@ -124,7 +144,7 @@ public class Generator {
 			for (Method m: currentClass.getMethods()) {
 				methods.add(m);
 			}
-			collectInterfaceMethods(clazz, methods, classes);
+			collectInterfaceMethods(clazz, methods);
 			for (Method m: methods) {
 				if (!m.isSynthetic() && (m.isPublic() || m.isProtected()) && !m.isStatic()) {
 					String name = m.getName();
@@ -159,28 +179,36 @@ public class Generator {
 		return api;
 	}
 	
-	private Map<String, JavaClass> readClasses(String[] libs) throws FileNotFoundException, IOException {
+	private Map<String, JavaClass> readClasses(String[] libs, boolean throwOnError) throws FileNotFoundException, IOException {
 		Map<String, JavaClass> map = new HashMap<String, JavaClass>();
-		for (String lib: libs) {
-			Map<String, JavaClass> classes = readJar(lib);
-			map.putAll(classes);
-		}
+        if (libs != null) {
+            for (String lib : libs) {
+                Map<String, JavaClass> classes = readJar(lib, throwOnError);
+                map.putAll(classes);
+            }
+        }
 		return map;
 	}
 	
-	private Map<String, JavaClass> readJar(String path) throws FileNotFoundException, IOException {
+	private Map<String, JavaClass> readJar(String path, boolean throwOnError) throws FileNotFoundException, IOException {
 		Map<String, JavaClass> classes = new HashMap<String, JavaClass>();
 		JarInputStream jis = null;
 		try {
+			String name = null;
 			jis = new JarInputStream(new FileInputStream(path));
-			for (ZipEntry ze = jis.getNextEntry(); ze != null; ze = jis
-					.getNextEntry()) {
-				String name = ze.getName();
-				if (name.endsWith(CLASS_EXT)) {
-					name = name.substring(0, name.length() - CLASS_EXT.length()).replace('/', '.').replace('$', '.');
-					ClassParser cp = new ClassParser(jis, name);
-					JavaClass clazz = cp.parse();
-					classes.put(name, clazz);
+			for (ZipEntry ze = jis.getNextEntry(); ze != null; ze = jis.getNextEntry()) {
+				try {
+					name = ze.getName();
+					if (name.endsWith(CLASS_EXT)) {
+						name = name.substring(0, name.length() - CLASS_EXT.length()).replace('/', '.').replace('$', '.');
+						ClassParser cp = new ClassParser(jis, name);
+						JavaClass clazz = cp.parse();
+						classes.put(name, clazz);
+					}
+				} catch (Exception e) {
+					if (throwOnError) {
+						throw new RuntimeException(e);
+					}
 				}
 			}
 		} finally {
@@ -208,143 +236,127 @@ public class Generator {
         return sig;
     }
 	
-	private void writeFile(DataRow data, String packageName, String name, JavaClass clazz, Map<String, List<Method>> api, Map<String, JavaClass> classes, File outputFile) throws IOException {
-		PrintStream ps = null;
-		Writer w = new Writer();
-		
-		try {
-			ps = new PrintStream(outputFile);
-			
-			w.writeln("package " + packageName + ";");
+    private void writeBinding(Writer w, DataRow dataRow, JavaClass clazz, String packageName, String name) {
+        Map<String, List<Method>> api = getPublicApi(clazz);
+
+		w.writeln("package " + packageName + ";");
+		w.writeln();
+        boolean hasSpecifiedName = !dataRow.getFilename().isEmpty();
+		if (hasSpecifiedName) {
+			w.writeln("@com.tns.JavaScriptImplementation(javaScriptFile = \"./" + dataRow.getJsFilename() + "\")");
+		}
+		w.write("public class " + name);
+		boolean isInterface = clazz.isInterface();
+		String extendKeyword = isInterface ? " implements " : " extends ";
+		w.write(extendKeyword);
+		w.write(clazz.getClassName().replace('$', '.'));
+		if(!isInterface) {
+			w.write(" implements");
+			w.write(" com.tns.NativeScriptHashCodeProvider");
+		}
+		w.writeln(" {");
+
+		if(isClassApplication(clazz)) {
+			//get instance method
+			w.write("\t");
+			w.writeln("private static " + clazz.getClassName().replace('$', '.') + " thiz;");
 			w.writeln();
-			boolean hasSpecifiedName = !data.getFilename().isEmpty();
-			if (hasSpecifiedName) {
-				w.writeln("@com.tns.JavaScriptImplementation(javaScriptFile = \"./" + data.getJsFilename() + "\")");
-			}
-			w.write("public class " + name);
-			boolean isInterface = clazz.isInterface();
-			String extendKeyword = isInterface ? " implements " : " extends ";
-			w.write(extendKeyword);
-			w.write(clazz.getClassName().replace('$', '.'));
-			if(!isInterface) {
-				w.write(" implements");
-				w.write(" com.tns.NativeScriptHashCodeProvider");
-			}
-			w.writeln(" {");
+		}
 
-			if(isClassApplication(clazz)) {
-				//get instance method
-				w.write("\t");
-				w.writeln("private static " + clazz.getClassName().replace('$', '.') + " thiz;");
-				w.writeln();
-			}
-
-			boolean hasInitMethod = false;
-			String[] methods = data.getMethods();
-			for (String m: methods) {
-				hasInitMethod = m.equals("init");
-				if (hasInitMethod) {
-					break;
-				}
-			}
-			boolean isApplicationClass = isApplicationClass(clazz, classes);
-			boolean hasInitMethod2 = isApplicationClass ? false : hasInitMethod;
-			writeConstructors(clazz, name, hasInitMethod2, isApplicationClass, w);
-
-			if (isInterface) {
-                Set<String> objectMethods = new HashSet<String>();
-                for (Method objMethod: classes.get("java.lang.Object").getMethods()) {
-                    if (!objMethod.isStatic() && (objMethod.isPublic() || objMethod.isProtected())) {
-                        String sig = getFullMethodSignature(objMethod);
-                        objectMethods.add(sig);
-                    }
-                }
-                Set<Method> notImplementedObjectMethods = new HashSet<Method>();
-				Method[] currentIfaceMethods = clazz.getMethods();
-				ArrayList<Method> ifaceMethods = new ArrayList<Method>();
-				for (Method m: currentIfaceMethods) {
-					ifaceMethods.add(m);
-				}
-
-				ArrayDeque<String> interfaceNames = new ArrayDeque<String>();
-				for (String iname: clazz.getInterfaceNames()) {
-					interfaceNames.add(iname);
-				}
-				while (!interfaceNames.isEmpty()) {
-					String iname = interfaceNames.pollFirst();
-					JavaClass iface = classes.get(iname.replace('$', '.'));
-					for (String iname2: iface.getInterfaceNames()) {
-						interfaceNames.add(iname2.replace('$', '.'));
-					}
-					Method[] ims = iface.getMethods();
-					for (Method m: ims) {
-						ifaceMethods.add(m);
-					}
-				}
-
-                Set<String> methodOverrides = new HashSet<String>();
-                for (String methodName: data.getMethods()) {
-                    methodOverrides.add(methodName);
-                }
-                for (Method ifaceMethod: ifaceMethods) {
-                    if (!ifaceMethod.isStatic())  {
-                        String sig = getFullMethodSignature(ifaceMethod);
-                        if (objectMethods.contains(sig) && !methodOverrides.contains(ifaceMethod.getName())) {
-                            notImplementedObjectMethods.add(ifaceMethod);
-                        }
-                    }
-                }
-                for (Method m: ifaceMethods) {
-                    if (!notImplementedObjectMethods.contains(m)) {
-                        writeMethodBody(m, w, isApplicationClass);
-                    }
-                }
-			} else {
-				for (String methodName : data.getMethods()) {
-					if (api.containsKey(methodName)) {
-						List<Method> methodGroup = api.get(methodName);
-						for (Method m : methodGroup) {
-                            writeMethodBody(m, w, isApplicationClass);
-						}
-					}
-				}
-			}
-			if(!isInterface) {
-				writeHashCodeProviderImplementationMethods(w);
-			}
-
-			if(isClassApplication(clazz)) {
-				w.write("\t");
-				w.write("public static ");
-				w.write(clazz.getClassName().replace('$', '.'));
-				w.writeln(" getInstance() {");
-				w.write("\t\t");
-				w.writeln("return thiz;");
-				w.write("\t");
-				w.writeln("}");
-			}
-
-			w.writeln("}");
-			
-			ps.append(w.getSting());
-			
-		} finally {
-			if (ps != null) {
-				ps.close();
+		boolean hasInitMethod = false;
+		String[] methods = dataRow.getMethods();
+		for (String m: methods) {
+			hasInitMethod = m.equals("init");
+			if (hasInitMethod) {
+				break;
 			}
 		}
-		
-		//outputFile.setLastModified(0);
+		boolean isApplicationClass = isApplicationClass(clazz, classes);
+		boolean hasInitMethod2 = isApplicationClass ? false : hasInitMethod;
+		writeConstructors(clazz, name, hasInitMethod2, isApplicationClass, w);
+
+		if (isInterface) {
+			Set<String> objectMethods = new HashSet<String>();
+			for (Method objMethod: classes.get("java.lang.Object").getMethods()) {
+				if (!objMethod.isStatic() && (objMethod.isPublic() || objMethod.isProtected())) {
+					String sig = getFullMethodSignature(objMethod);
+					objectMethods.add(sig);
+				}
+			}
+			Set<Method> notImplementedObjectMethods = new HashSet<Method>();
+			Method[] currentIfaceMethods = clazz.getMethods();
+			ArrayList<Method> ifaceMethods = new ArrayList<Method>();
+			for (Method m: currentIfaceMethods) {
+				ifaceMethods.add(m);
+			}
+
+			ArrayDeque<String> interfaceNames = new ArrayDeque<String>();
+			for (String iname: clazz.getInterfaceNames()) {
+				interfaceNames.add(iname);
+			}
+			while (!interfaceNames.isEmpty()) {
+				String iname = interfaceNames.pollFirst();
+				JavaClass iface = classes.get(iname.replace('$', '.'));
+				for (String iname2: iface.getInterfaceNames()) {
+					interfaceNames.add(iname2.replace('$', '.'));
+				}
+				Method[] ims = iface.getMethods();
+				for (Method m: ims) {
+					ifaceMethods.add(m);
+				}
+			}
+
+			Set<String> methodOverrides = new HashSet<String>();
+			for (String methodName: dataRow.getMethods()) {
+				methodOverrides.add(methodName);
+			}
+			for (Method ifaceMethod: ifaceMethods) {
+				if (!ifaceMethod.isStatic())  {
+					String sig = getFullMethodSignature(ifaceMethod);
+					if (objectMethods.contains(sig) && !methodOverrides.contains(ifaceMethod.getName())) {
+						notImplementedObjectMethods.add(ifaceMethod);
+					}
+				}
+			}
+			for (Method m: ifaceMethods) {
+				if (!notImplementedObjectMethods.contains(m)) {
+					writeMethodBody(m, w, isApplicationClass);
+				}
+			}
+		} else {
+			for (String methodName : dataRow.getMethods()) {
+				if (api.containsKey(methodName)) {
+					List<Method> methodGroup = api.get(methodName);
+					for (Method m : methodGroup) {
+						writeMethodBody(m, w, isApplicationClass);
+					}
+				}
+			}
+		}
+		if(!isInterface) {
+			writeHashCodeProviderImplementationMethods(w);
+		}
+
+		if(isClassApplication(clazz)) {
+			w.write("\t");
+			w.write("public static ");
+			w.write(clazz.getClassName().replace('$', '.'));
+			w.writeln(" getInstance() {");
+			w.write("\t\t");
+			w.writeln("return thiz;");
+			w.write("\t");
+			w.writeln("}");
+		}
+
+		w.writeln("}");
 	}
 
 	private boolean isClassApplication(JavaClass clazz) {
-		if(clazz.getClassName().equals("android.app.Application") ||
-				clazz.getClassName().equals("android.support.multidex.MultiDexApplication") ||
-				clazz.getClassName().equals("android.test.mock.MockApplication")) {
-			return  true;
-		}
-		return  false;
-	}
+        String className = clazz.getClassName();
+        return className.equals("android.app.Application") ||
+                className.equals("android.support.multidex.MultiDexApplication") ||
+                className.equals("android.test.mock.MockApplication");
+    }
 
     private void writeMethodBody(Method m, Writer w, boolean isApplicationClass) {
         String visibility = m.isPublic() ? "public" : "protected";
@@ -521,7 +533,7 @@ public class Generator {
 		w.write(type);
 	}
 	
-	private void collectInterfaceMethods(JavaClass clazz, List<Method> methods, Map<String, JavaClass> classes) {
+	private void collectInterfaceMethods(JavaClass clazz, List<Method> methods) {
 		JavaClass currentClass = clazz;
 		while (true) {
 			String currentClassname = currentClass.getClassName();
