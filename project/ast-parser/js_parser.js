@@ -43,7 +43,6 @@ var fs = require("fs"),
 	rootTraversed = false,
 	explicitTraversalKey = "recursive-static-bindings";
 
-
 //env variables
 if (process.env.AST_PARSER_OUT_FILE) {
 	outFile = process.env.AST_PARSER_OUT_FILE.trim();
@@ -54,7 +53,6 @@ if (process.env.AST_PARSER_INPUT_DIR) {
 if (process.env.AST_PARSER_INTERFACE_FILE_PATH) {
 	interfacesNamesFilePath = process.env.AST_PARSER_INTERFACE_FILE_PATH.trim();
 }
-
 
 //console variables have priority
 if (arguments && arguments.length >= 3) {

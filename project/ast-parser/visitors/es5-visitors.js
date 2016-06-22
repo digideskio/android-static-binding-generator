@@ -247,6 +247,7 @@ var es5_visitors = (function () {
 			var extendArguments = path.parent.arguments;
 			var arg0,
 				arg1;
+
 			if (extendArguments.length === 1 && t.isObjectExpression(arg0)) {
 				arg0 = extendArguments[0];
 			}
@@ -261,6 +262,7 @@ var es5_visitors = (function () {
 					arg1 = extendArguments[0];
 				}
 				else if(extendArguments.length === 2) {
+					// TODO: check if the first argument is identifier and try to compute it and get its string literal
 					if(t.isStringLiteral(extendArguments[0]) && t.isObjectExpression(extendArguments[1])) {
 						arg0 = extendArguments[0];
 						arg1 = extendArguments[1];
