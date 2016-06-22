@@ -10,7 +10,7 @@ dependencies {
 jar {
     manifest {
         attributes("Manifest-Version": "1.0",
-                "Main-Class": "org.nativescript.staticbindinggenerator.Generator")
+                "Main-Class": "org.nativescript.staticbindinggenerator.Main")
     }
 
     from {
