@@ -262,6 +262,14 @@ public class Generator {
 
         w.writeln("package " + packageName + ";");
         w.writeln();
+
+        boolean isApplicationClass = isApplicationClass(clazz, classes);
+        if(isApplicationClass && !packageName.equals("com.tns")) {
+            w.writeln("import com.tns.RuntimeHelper;");
+            w.writeln("import com.tns.Runtime;");
+            w.writeln();
+        }
+
         boolean hasSpecifiedName = !dataRow.getFilename().isEmpty();
         if (hasSpecifiedName) {
             w.writeln("@com.tns.JavaScriptImplementation(javaScriptFile = \"./" + dataRow.getJsFilename() + "\")");
@@ -292,7 +300,7 @@ public class Generator {
                 break;
             }
         }
-        boolean isApplicationClass = isApplicationClass(clazz, classes);
+
         boolean hasInitMethod2 = isApplicationClass ? false : hasInitMethod;
         writeConstructors(clazz, name, hasInitMethod2, isApplicationClass, w);
 
