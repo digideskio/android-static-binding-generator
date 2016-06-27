@@ -495,7 +495,7 @@ public class Generator {
 
     private void writeMethodBody(Method m, boolean isConstructor, boolean isApplicationClass, Writer w) {
         if (m.getName().equals("onCreate") && isApplicationClass) {
-            w.writeln("\t\tnew RuntimeHelper(this).initRuntime();");
+            w.writeln("\t\tcom.tns.Runtime runtime = RuntimeHelper.initRuntime(this);");
         }
         if (isApplicationClass) {
             w.writeln("\t\tif (!Runtime.isInitialized()) {");
@@ -555,6 +555,11 @@ public class Generator {
         w.write("\", ");
         writeType(ret, w);
         w.writeln(".class, args);");
+        if (m.getName().equals("onCreate") && isApplicationClass) {
+            w.writeln("\t\tif (runtime != null) {");
+            w.writeln("\t\t\truntime.run();");
+            w.writeln("\t\t}");
+        }
     }
 
     private void writeType(Type t, Writer w) {
