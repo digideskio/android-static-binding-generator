@@ -495,7 +495,7 @@ public class Generator {
 
     private void writeMethodBody(Method m, boolean isConstructor, boolean isApplicationClass, Writer w) {
         if (m.getName().equals("onCreate") && isApplicationClass) {
-            w.writeln("\t\tcom.tns.Runtime runtime = new RuntimeHelper(this).initRuntime();");
+            w.writeln("\t\tcom.tns.Runtime runtime = RuntimeHelper.initRuntime(this);");
         }
         if (isApplicationClass) {
             w.writeln("\t\tif (!Runtime.isInitialized()) {");
