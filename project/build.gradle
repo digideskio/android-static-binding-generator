@@ -5,7 +5,7 @@
 def isWinOs = System.properties['os.name'].toLowerCase().contains('windows')
 
 def bgRootDir = "$rootDir/build-tools/android-static-binding-generator"
-def astParserDir = "$bgRootDir/ast-parser"
+def astParserDir = "$bgRootDir/parser"
 def interfaceNamesFilePath = "$bgRootDir/interfaces-names.txt"
 def bindingsFilePath = "$bgRootDir/bindings.txt"
 def cachedJarsFilePath = "$bgRootDir/cached.dat"
