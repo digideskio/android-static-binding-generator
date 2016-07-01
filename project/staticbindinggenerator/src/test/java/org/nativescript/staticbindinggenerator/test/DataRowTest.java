@@ -1,20 +1,16 @@
 package org.nativescript.staticbindinggenerator.test;
 
-import org.apache.commons.io.IOUtils;
-import org.nativescript.staticbindinggenerator.DataRow;
-import org.nativescript.staticbindinggenerator.Generator;
 import org.junit.Assert;
 import org.junit.Test;
+import org.nativescript.staticbindinggenerator.DataRow;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.List;
 
 public class DataRowTest {
     @Test
     public void testParseInterface() throws IOException {
-        String s = IOUtils.toString(this.getClass().getResource("datarow-interface.txt"), "UTF-8");
-        List<String> lines = IOUtils.readLines(new StringReader(s));
+        List<String> lines = Utils.getDataRowsFromResource("datarow-interface.txt");
 
         DataRow row = new DataRow(lines.get(0));
 
@@ -29,8 +25,7 @@ public class DataRowTest {
 
     @Test
     public void testParseNamedExtend() throws IOException {
-        String s = IOUtils.toString(this.getClass().getResource("datarow-named-extend.txt"), "UTF-8");
-        List<String> lines = IOUtils.readLines(new StringReader(s));
+        List<String> lines = Utils.getDataRowsFromResource("datarow-named-extend.txt");
 
         DataRow row = new DataRow(lines.get(0));
 
@@ -41,5 +36,26 @@ public class DataRowTest {
         String[] methods = row.getMethods();
         Assert.assertEquals(methods.length, 1);
         Assert.assertEquals(methods[0], "hashCode");
+    }
+
+    @Test
+    public void testParseClassWithMultipleInterfaces() throws IOException {
+        List<String> lines = Utils.getDataRowsFromResource("datarow-class-extends-interfaces.txt");
+
+        DataRow row = new DataRow(lines.get(0));
+
+        Assert.assertEquals(row.getBaseClassname(), "java.lang.Object");
+        Assert.assertEquals(row.getSuffix(), "");
+        Assert.assertEquals(row.getFilename(), "com.tns.ComplexClass");
+        Assert.assertEquals(row.getJsFilename(), "app.js");
+
+        String[] methods = row.getMethods();
+        Assert.assertEquals(9, methods.length);
+
+        String[] interfaces = row.getInterfaces();
+        Assert.assertEquals(4, interfaces.length);
+
+        Assert.assertEquals(interfaces[0], "java.util.jar.Pack200.Unpacker");
+        Assert.assertEquals(interfaces[2], "java.util.Observer");
     }
 }
