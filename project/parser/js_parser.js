@@ -228,7 +228,7 @@ var visitAst = function (data, err) {
 		}
 
 		traverse.default(data.ast, {
-			enter(path) {
+			enter: function(path) {
 
 				var decoratorConfig = {
 					logger: logger,
