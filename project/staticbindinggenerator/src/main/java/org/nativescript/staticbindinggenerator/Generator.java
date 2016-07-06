@@ -204,7 +204,8 @@ public class Generator {
         Map<String, JavaClass> map = new HashMap<String, JavaClass>();
         if (libs != null) {
             for (String lib : libs) {
-                Map<String, JavaClass> classes = readJar(lib, throwOnError);
+                File f = new File(lib);
+                Map<String, JavaClass> classes = f.isFile() ? readJar(lib, throwOnError) : readDir(lib, throwOnError);
                 map.putAll(classes);
             }
         }
@@ -237,6 +238,31 @@ public class Generator {
                 jis.close();
             }
         }
+        return classes;
+    }
+
+    private Map<String, JavaClass> readDir(String path, boolean throwOnError) throws FileNotFoundException, IOException {
+        Map<String, JavaClass> classes = new HashMap<String, JavaClass>();
+
+        ArrayDeque<File> d = new ArrayDeque<File>();
+        d.add(new File(path));
+
+        while (!d.isEmpty()) {
+            File cur = d.pollFirst();
+            File[] files = cur.listFiles();
+            for (File f: files) {
+                if (f.isFile() && f.getName().endsWith(CLASS_EXT)) {
+                    ClassParser cp = new ClassParser(f.getAbsolutePath());
+                    JavaClass clazz = cp.parse();
+                    String name = clazz.getClassName();
+                    name = name.replace('/', '.').replace('$', '.');
+                    classes.put(name, clazz);
+                } else if (f.isDirectory()) {
+                    d.addLast(f);
+                }
+            }
+        }
+
         return classes;
     }
 
@@ -316,7 +342,9 @@ public class Generator {
             Method[] currentIfaceMethods = clazz.getMethods();
             ArrayList<Method> ifaceMethods = new ArrayList<Method>();
             for (Method m : currentIfaceMethods) {
-                ifaceMethods.add(m);
+                if (!m.getName().equals("<clinit>")) {
+                    ifaceMethods.add(m);
+                }
             }
 
             ArrayDeque<String> interfaceNames = new ArrayDeque<String>();

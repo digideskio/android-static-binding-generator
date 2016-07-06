@@ -1,5 +1,7 @@
 package org.nativescript.staticbindinggenerator.test;
 
+import com.example.MyInterface;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,4 +44,32 @@ public class GeneratorTest {
         Assert.assertNotNull(helloClass);
         Assert.assertEquals(3, helloClass.getDeclaredMethods().length);
     }
+
+    @Test
+    public void testCanCompileBindingOfInterfaceWithStaticInitializer() throws Exception {
+        URL u = MyInterface.class.getResource('/' + MyInterface.class.getName().replace('.', '/') + ".class");
+        File f = new File(u.toURI()).getParentFile().getParentFile().getParentFile();
+
+        File rt = new File(System.getProperty("java.home"), "lib/rt.jar");
+        Assert.assertTrue(rt.exists());
+
+        String s = IOUtils.toString(this.getClass().getResource("datarow-classctor.txt"), "UTF-8");
+        List<String> lines = IOUtils.readLines(new StringReader(s));
+        DataRow dataRow = new DataRow(lines.get(0));
+
+        String outputDir = null;
+        String[] libs = {rt.getAbsolutePath(), f.getAbsolutePath()};
+        Generator generator = new Generator(outputDir, libs);
+        Binding binding = generator.generateBinding(dataRow);
+
+        StringBuffer sourceCode = new StringBuffer();
+        sourceCode.append(binding.getContent());
+
+        Iterable<String> options = new ArrayList<String>(Arrays.asList("-cp", f.getAbsolutePath()));
+        Class<?> helloClass = InMemoryJavaCompiler.compile("com.tns.gen.com.example.MyInterface", sourceCode.toString(), options);
+
+        Assert.assertNotNull(helloClass);
+        Assert.assertEquals(1, helloClass.getDeclaredMethods().length);
+    }
+
 }
