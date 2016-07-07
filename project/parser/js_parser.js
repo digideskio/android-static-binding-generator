@@ -36,6 +36,7 @@ var fs = require("fs"),
 	arguments = process.argv,
 	appDir = path.dirname(require.main.filename),
 	extendDecoratorName = "JavaProxy",
+	interfacesDecoratorName = "Interfaces",
 	outFile = "out/out_parsed_typescript.txt", // default out file
 	inputDir = "input_parced_typescript", // default input folder
 	interfacesNamesFilePath = "../interfaces-names.txt", //default interace_names file path
@@ -107,7 +108,7 @@ function traverseDirectory(dir, traverseExplicitly) {
 						logger.info("Skipping traversal of folder " + dir);
 						return;
 					} else {
-						if(pjson.nativescript[explicitTraversalKey]) {
+						if (pjson.nativescript[explicitTraversalKey]) {
 							logger.info("Folder will be traversed completely: " + dir);
 							traverseExplicitly = true;
 						}
@@ -228,12 +229,12 @@ var visitAst = function (data, err) {
 		}
 
 		traverse.default(data.ast, {
-			enter: function(path) {
-
+			enter: function (path) {
 				var decoratorConfig = {
 					logger: logger,
 					extendDecoratorName: extendDecoratorName,
-					filePath: data.filePath.substring(inputDir.length + 1, (data.filePath.length - 3)),
+					interfacesDecoratorName: interfacesDecoratorName,
+					filePath: data.filePath.substring(inputDir.length + 1, (data.filePath.length - 3)) || "",
 					fullPathName: data.filePath.substring(inputDir.length + 1).replace(/[\\]/g, "/"),
 					interfaceNames: interfaceNames
 				};

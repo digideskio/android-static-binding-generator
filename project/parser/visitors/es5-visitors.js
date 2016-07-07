@@ -100,8 +100,7 @@ var es5_visitors = (function () {
 	*	Write results in "normalExtendsArr" or "customExtendsArr".
 	*/
 	function traverseTsExtend(path, config) {
-
-		//this is the information for a normal extend
+		// information for normal extend (unnamed)
 		var extendClass;
 		try {
 			extendClass = _getArgumentFromNodeAsString(path, 5, config)
@@ -110,9 +109,7 @@ var es5_visitors = (function () {
 			return;
 		}
 
-		var methodsAndInterfaces = _getOverriddenMethodsAndInterfacesTypescript(path, 3);
-		var overriddenMethodNames = methodsAndInterfaces[0];
-		var implementedInterfaces = methodsAndInterfaces[1];
+		var overriddenMethodNames = _getOverriddenMethodsTypescript(path, 3);
 
 		var extendParent = _getParrent(path, 1, config);
 		var declaredClassName = "";
@@ -120,13 +117,45 @@ var es5_visitors = (function () {
 			declaredClassName = extendParent.node.arguments[0].name;
 		}
 
-		// todo: check the found names in some list with predefined classes
+		var decorateNodes = traverseForDecorate(path, config);
 
-		// check for _decorate (normal typescript extend + java proxy)
+		var isDecoratedWithExtend = false,
+			customExtendDecoratorName,
+			customExtendDecoratorValue,
+			implementedInterfaces = [];
 
-		var isDecorated = traverseToFindDecorate(path, config, extendClass, overriddenMethodNames, implementedInterfaces);
+		if (decorateNodes) {
+			for (var i in decorateNodes) {
+				var currentDecorator = decorateNodes[i];
+				if (t.isCallExpression(currentDecorator)) {
+					// Interfaces/Implements
+					if (currentDecorator.callee.name === config.interfacesDecoratorName) {
+						currentDecorator.callee.skipMeOnVisit = true;
 
-		if (!isDecorated) {
+						var interfaces = currentDecorator.arguments[0].elements;
+
+						for (var i in interfaces) {
+							var interfaceName = _getWholeInterfaceNameFromInterfacesNode(interfaces[i]);
+							implementedInterfaces.push(interfaceName);
+						}
+					}
+
+					// JavaProxy
+					if (currentDecorator.callee.name === config.extendDecoratorName) {
+						currentDecorator.callee.skipMeOnVisit = true;
+
+						isDecoratedWithExtend = true;
+
+						customExtendDecoratorName = config.extendDecoratorName === undefined ? defaultExtendDecoratorName : config.extendDecoratorName;
+						customExtendDecoratorValue = currentDecorator.arguments[0].value;
+					}
+				}
+			}
+		}
+
+		if (isDecoratedWithExtend) {
+			traverseJavaProxyExtend(customExtendDecoratorValue, config, customExtendDecoratorName, extendClass, overriddenMethodNames, implementedInterfaces);
+		} else {
 			var lineToWrite = _generateLineToWrite("", extendClass, overriddenMethodNames, TYPESCRIPT_EXTEND_STRING + DECLARED_CLASS_SEPARATOR + declaredClassName, "", implementedInterfaces);
 
 			if (config.logger) {
@@ -168,6 +197,26 @@ var es5_visitors = (function () {
 				}
 			}
 		}
+	}
+
+	function traverseForDecorate(path, config) {
+		var iifeRoot = _getParrent(path, 3)
+		var body = iifeRoot.node.body;
+		for (var index in body) {
+			var ci = body[index];
+			if (t.isExpressionStatement(ci) &&
+				t.isAssignmentExpression(ci.expression) &&
+				ci.expression.right.callee &&
+				ci.expression.right.callee.name === "__decorate" &&
+				ci.expression.right.arguments &&
+				t.isArrayExpression(ci.expression.right.arguments[0])) {
+				// returns the node of the decorate (node.expression.right.callee)
+				// __decorate([..])
+				return ci.expression.right.arguments[0].elements;
+			}
+		}
+
+		return null;
 	}
 
 	/* 
@@ -218,6 +267,7 @@ var es5_visitors = (function () {
 			if (config.logger) {
 				config.logger.info(lineToWrite)
 			}
+
 			interfacesArr.push(lineToWrite)
 		}
 	}
@@ -315,11 +365,11 @@ var es5_visitors = (function () {
 				if (config.logger) {
 					config.logger.info(lineToWrite)
 				}
-				
+
 				var classNameFromDecorator = isCorrectExtendClassName ? className : "";
-				lineToWrite =  _generateLineToWrite(classNameFromDecorator, extendClass.reverse().join("."), overriddenMethodNames, "", config.fullPathName, implementedInterfaces);
+				lineToWrite = _generateLineToWrite(classNameFromDecorator, extendClass.reverse().join("."), overriddenMethodNames, "", config.fullPathName, implementedInterfaces);
 				addCustomExtend(classNameFromDecorator, config.fullPathName, lineToWrite);
-				
+
 				return;
 			}
 
@@ -509,11 +559,8 @@ var es5_visitors = (function () {
 		return undefined;
 	}
 
-	function _getOverriddenMethodsAndInterfacesTypescript(path, count) {
-		var result = [];
+	function _getOverriddenMethodsTypescript(path, count) {
 		var overriddenMethods = [];
-		var implementedInterfaces = [];
-		var interfacesFound = false;
 
 		var cn = _getParrent(path, count)
 
@@ -522,32 +569,14 @@ var es5_visitors = (function () {
 			var ci = cn.node.body[item];
 			if (t.isExpressionStatement(ci)) {
 				if (t.isAssignmentExpression(ci.expression)) {
-
-					if (ci.expression.left.property) {
-
-						if (!interfacesFound
-							&& ci.expression.left.property.name.toLowerCase() === "interfaces"
-							&& t.isArrayExpression(ci.expression.right)) {
-							interfacesFound = true;
-
-							var interfaces = ci.expression.right.elements;
-
-							for (var i in interfaces) {
-								var interfaceName = _getWholeInterfaceNameFromInterfacesNode(interfaces[i]);
-								implementedInterfaces.push(interfaceName);
-							}
-						} else {
-							overriddenMethods.push(ci.expression.left.property.name);
-						}
+					if(ci.expression.left.property) {
+						overriddenMethods.push(ci.expression.left.property.name)
 					}
 				}
 			}
 		}
 
-		result.push(overriddenMethods);
-		result.push(implementedInterfaces);
-
-		return result;
+		return overriddenMethods;
 	}
 
 	function _getParrent(node, numberOfParrents, config) {
@@ -584,13 +613,13 @@ var es5_visitors = (function () {
 	}
 
 	function addCustomExtend(param, extendPath, lineToWrite) {
-		if(customExtendsArrGlobal.indexOf(param) === -1) {
+		if (customExtendsArrGlobal.indexOf(param) === -1) {
 			customExtendsArr.push(lineToWrite)
 			customExtendsArrGlobal.push(param)
 		}
 		else {
 			console.log("Warning: there already is an extend called " + param + ".")
-			if(extendPath.indexOf("tns_modules") === -1) {
+			if (extendPath.indexOf("tns_modules") === -1) {
 				// app folder will take precedence over tns_modules
 				console.log("Warning: The static binding generator will generate extend from:" + extendPath + " implementation")
 				customExtendsArr.push(lineToWrite)

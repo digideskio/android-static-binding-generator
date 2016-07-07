@@ -88,4 +88,3 @@ task generateBindings() {
 
 runAstParser.dependsOn(generateInterfaceNamesList)
 generateBindings.dependsOn(runAstParser)
-
