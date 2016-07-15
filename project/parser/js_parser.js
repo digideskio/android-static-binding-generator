@@ -43,6 +43,7 @@ var fs = require("fs"),
 	rootTraversed = false,
 	explicitTraversalKey = "recursive-static-bindings";
 
+
 //env variables
 if (process.env.AST_PARSER_OUT_FILE) {
 	outFile = process.env.AST_PARSER_OUT_FILE.trim();
@@ -53,6 +54,7 @@ if (process.env.AST_PARSER_INPUT_DIR) {
 if (process.env.AST_PARSER_INTERFACE_FILE_PATH) {
 	interfacesNamesFilePath = process.env.AST_PARSER_INTERFACE_FILE_PATH.trim();
 }
+
 
 //console variables have priority
 if (arguments && arguments.length >= 3) {
@@ -73,17 +75,99 @@ fileHelpers.createFile(outFile)
 
 /////////////// EXECUTE ////////////////
 
+// ENTRY POINT!
+var tsHelpersFilePath = path.join(inputDir, "..", "internal", "ts_helpers.js");
+getFileAst(tsHelpersFilePath)
+	.then(getExtendsLineColumn) //config
+	.then(readInterfaceNames) //config
+	.then(traverseAndAnalyseFilesDir) //start
+	.catch(exceptionHandler);
+
+
+
+/*
+*	Get line and column of the __extends function from ts_helpers file
+*/
+function getFileAst(tsHelpersFilePath) {
+	return new Promise(function (resolve, reject) {
+		fs. readFile(tsHelpersFilePath, 'utf8', function(err, fileContent) {
+			if (err) {
+				logger.warn("+DIDN'T parse ast from file " + tsHelpersFilePath);
+				return reject(err);
+			}
+
+			logger.info("+parsing ast from " + tsHelpersFilePath);
+
+			var ast = babelParser.parse(fileContent, {
+				minify: false,
+				plugins: ["decorators"]
+			});
+
+			return resolve(ast);
+		});
+	});
+};
+
+/*
+*	Get line and column of the extend function in the tsHelpers.js file
+* 	(Line and column are used as identifiers for the typescript extended classes!)
+*/
+function getExtendsLineColumn(ast) {
+	return new Promise(function (resolve, reject) {
+
+		var tsHelpersInfo = {};
+		traverse.default(ast, {
+			enter: function(path) {
+
+				if(t.isAssignmentExpression(path.parent) &&
+					t.isCallExpression(path) &&
+					 path.node.callee.property &&
+					 path.node.callee.property.name === "extend" &&
+					 path.node.callee.object.name === "parent") {
+						tsHelpersInfo.line = path.node.callee.property.loc.start.line
+						tsHelpersInfo.column = path.node.callee.property.loc.start.column + 1
+				}
+			}
+		})
+
+		es5_visitors.setLineAndColumn(tsHelpersInfo);
+		resolve(true);
+	});
+};
+
+/*
+*	Get's pregenerated interface names from "interfacesNamesFilePath"
+*	After reading interface names runs the visiting api
+*/
+function readInterfaceNames(data, err) {
+	return new Promise(function (resolve, reject) {
+		new lazy(fs.createReadStream(interfacesNamesFilePath))
+			.lines
+			.forEach(function (line) {
+				interfaceNames.push(line.toString());
+			}).on('pipe', function (err) {
+				if (err) {
+					reject(false);
+				}
+
+				inputDir = path.normalize(inputDir);
+				resolve(inputDir);
+			});
+	})
+}
+
 /*
 *	Traverses a given input directory and attempts to visit every ".js" file.
 *	It passes each found file down the line.
 */
-var traverseAndAnalyseFilesDir = function (filesDir) {
-	if (!fs.existsSync(filesDir)) {
-		throw "The input dir: " + filesDir + " does not exist!";
+function traverseAndAnalyseFilesDir(inputDir) {
+	if (!fs.existsSync(inputDir)) {
+		throw "The input dir: " + inputDir + " does not exist!";
 	}
 
-	traverseDirectory(filesDir, false);
+	traverseDirectory(inputDir, false/*traverseExplicitly*/);
 }
+
 
 function traverseDirectory(dir, traverseExplicitly) {
 	// list all files in directory
@@ -104,6 +188,7 @@ function traverseDirectory(dir, traverseExplicitly) {
 					var fullPJsonPath = path.join(dir, "package.json");
 					var pjson = require(fullPJsonPath);
 					if (!pjson.nativescript) {
+
 						logger.info("Skipping traversal of folder " + dir);
 						return;
 					} else {
@@ -123,7 +208,6 @@ function traverseDirectory(dir, traverseExplicitly) {
 
 			if (file.substring(file.length - 3, file.length) === '.js') {
 				logger.info("Visiting JavaScript file: " + file);
-
 				readFile(file)
 					.then(astFromFileContent)
 					// .then(writeToFile)
@@ -140,31 +224,6 @@ function traverseDirectory(dir, traverseExplicitly) {
         }
     });
 }
-
-// ENTRY POINT!
-/*
-*	Get's pregenerated interface names from "interfacesNamesFilePath"
-*	After reading interface names runs the visiting api
-*/
-function readInterfaceNames() {
-	return new Promise(function (resolve, reject) {
-		new lazy(fs.createReadStream(interfacesNamesFilePath))
-			.lines
-			.forEach(function (line) {
-				interfaceNames.push(line.toString());
-				// console.log(line.toString());
-			}).on('pipe', function (err) {
-				if (err) {
-					reject(false);
-				}
-
-				inputDir = path.normalize(inputDir);
-				resolve(inputDir);
-			});
-	})
-}
-readInterfaceNames().then(traverseAndAnalyseFilesDir)
-
 
 /*
 *	Gets the file content as text and passes it down the line.
@@ -201,7 +260,7 @@ var astFromFileContent = function (data, err) {
 		}
 
 		logger.info("+parsing ast from file!");
-		// console.log("data: " + data.data);
+
 		var ast = babelParser.parse(data.data, {
 			minify: false,
 			plugins: ["decorators"]

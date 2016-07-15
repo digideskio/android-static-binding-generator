@@ -248,7 +248,6 @@ var es5_visitors = (function () {
 			var extendArguments = path.parent.arguments;
 			var arg0,
 				arg1;
-
 			if (extendArguments.length === 1 && t.isObjectExpression(arg0)) {
 				arg0 = extendArguments[0];
 			}
@@ -486,8 +485,13 @@ var es5_visitors = (function () {
 		}
 	}
 
+	function setLineAndColumn(data) {
+		TYPESCRIPT_EXTEND_STRING = FILE_SEPARATOR + "rnal_ts_helpers_l"+data.line+"_c"+data.column;
+	}
+
 	return {
-		es5Visitor: es5Visitor
+		es5Visitor: es5Visitor,
+		setLineAndColumn: setLineAndColumn
 	}
 })();
 
