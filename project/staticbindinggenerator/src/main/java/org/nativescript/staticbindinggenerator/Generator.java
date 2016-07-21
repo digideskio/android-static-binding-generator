@@ -146,6 +146,28 @@ public class Generator {
         return bindings.toArray(new Binding[bindings.size()]);
     }
 
+    private void collectImplementedInterfaces(String[] interfaces, JavaClass clazz) {
+        String[] implInterfaces = interfaces;
+        if (implInterfaces.length > 0 && !implInterfaces[0].isEmpty()) {
+            // since JavaClass.setInterfaceNames overwrites all interfaces, we need to preserve any
+            // original interfaces implemented by the class/interface
+            ArrayList<String> interfacesList = new ArrayList<String>();
+            String[] nativeInterfaces = clazz.getInterfaceNames();
+            if (nativeInterfaces.length > 0) {
+                for (String intface : nativeInterfaces) {
+                    interfacesList.add(intface);
+                }
+            }
+
+            for (String intface : implInterfaces) {
+                interfacesList.add(intface);
+            }
+
+            String[] arr = interfacesList.toArray(new String[interfacesList.size()]);
+            clazz.setInterfaceNames(arr);
+        }
+    }
+
     private String getNormalizedName(String filename) {
         StringBuilder sb = new StringBuilder(filename.length());
         for (char ch : filename.toCharArray()) {
@@ -284,6 +306,9 @@ public class Generator {
     }
 
     private void writeBinding(Writer w, DataRow dataRow, JavaClass clazz, String packageName, String name) {
+        String[] implInterfaces = dataRow.getInterfaces();
+        collectImplementedInterfaces(implInterfaces, clazz);
+
         Map<String, List<Method>> api = getPublicApi(clazz);
 
         w.writeln("package " + packageName + ";");
@@ -308,6 +333,12 @@ public class Generator {
         if (!isInterface) {
             w.write(" implements");
             w.write(" com.tns.NativeScriptHashCodeProvider");
+
+            if (implInterfaces.length > 0 && !implInterfaces[0].isEmpty()) {
+                for (String intface : implInterfaces) {
+                    w.write(", " + intface);
+                }
+            }
         }
         w.writeln(" {");
 

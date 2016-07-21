@@ -1,7 +1,8 @@
 node_modules
-project/Generator/.idea
-project/Generator/staticbindinggenerator/.idea
-project/Generator/staticbindinggenerator/gradle
-project/Generator/staticbindinggenerator/gradlew
-project/Generator/staticbindinggenerator/gradlew.bat
-project/Generator/staticbindinggenerator/local.properties
+.vscode
+project/staticbindinggenerator/.idea
+project/staticbindinggenerator/gradle
+project/staticbindinggenerator/gradlew
+project/staticbindinggenerator/gradlew.bat
+project/staticbindinggenerator/local.properties
+project/interfaces-names.txt

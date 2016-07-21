@@ -1,5 +1,5 @@
-android.widget.Button**toString*A.B.MyButton*normal_ns_extends.js
-java.lang.Object**getHashCode*com.tns.MyObject*normal_ns_extends.js
-android.widget.Button*_fnormal_ns_extends_l1_c23__*getHashCode,toString**
-android.widget.Button*_fnormal_ns_extends_l16_c23__***
-android.view.View*_fnormal_ns_extends_l19_c19__*onAttachedToWindow,onDetachedFromWindow**
+android.widget.Button**toString*A.B.MyButton*normal_ns_extends.js*
+java.lang.Object**getHashCode*com.tns.MyObject*normal_ns_extends.js*
+android.widget.Button*_fnormal_ns_extends_l1_c23__*getHashCode,toString***
+android.widget.Button*_fnormal_ns_extends_l16_c23__****
+android.view.View*_fnormal_ns_extends_l19_c19__*onAttachedToWindow,onDetachedFromWindow***
